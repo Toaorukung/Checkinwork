@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Checkin</title>
+  <link rel="icon" type="image/png"
+    href="https://cdn.fastly.steamstatic.com/steamcommunity/public/images/items/2861720/5ae020a665661d3e6499da7fb601f373fa998228.gif">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery-ui-touch-punch@0.2.3/jquery.ui.touch-punch.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
+      <div class="progress"></div>
+    </div>
+  </header>
+  <main class="home mt-5 container" id="home" data-uuid="" data-loc="" data-web="" data-name="">
+    <video autoplay muted loop id="myBackgroundVideo" playsinline webkit-playsinline>
+      <source
+        src="https://cdn.fastly.steamstatic.com/steamcommunity/public/images/items/2861720/85882f90ad8ca69467610883a9fa95ecc2f071ab.webm"
+        type="video/webm">
+    </video>
+    <div class="row">
+      <div class="col-12 col-md-12 text-center mb-1 position-relative">
+        <img class="rounded-3 border border-danger border-3 border-opacity-50 imgpro" height="150"
+          src="https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/2861690/0d81afcfee604d3b93b374ac74c2ce2d34a5b63a.gif"
+          alt="">
+        <img class="position-absolute top-0 start-50 translate-middle-x" height="165"
+          src="https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/2861690/396aa5ec2a44df7548ffa2bcc5383eef91095a4b.png"
+          alt="">
+        <p class="name mb-1 mt-1 fw-bold fs-4"></p>
+      </div>
+
+      <div class="col-6 mb-1">
+        <div class="form-floating">
+          <input class="form-control" type="text" id="lat" placeholder="ละติจูด" aria-label="ละติจูด" readonly>
+          <label for="lat">ละติจูด</label>
+        </div>
+      </div>
+
+      <div class="col-6 mb-1">
+        <div class="form-floating">
+          <input class="form-control" type="text" id="lng" placeholder="ลองจิจูด" aria-label="ลองจิจูด" readonly>
+          <label for="lng">ลองจิจูด</label>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1">
+        <div class="form-floating">
+          <input class="form-control checklo" type="text" placeholder="อยู่ห่างจากจุดเช็คอิน"
+            aria-label="อยู่ห่างจากจุดเช็คอิน" disabled readonly>
+          <label for="checklo">อยู่ห่างจากจุดเช็คอิน</label>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1">
+        <div class="ratio ratio-16x9">
+          <div id="map" class="w-100 h-100 rounded"></div>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1">
+        <div class="ratio ratio-16x9 mb-3 border rounded overflow-hidden bg-dark video-container">
+          <video id="video" class="w-100 h-100 mirror" playsinline autoplay muted></video>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1 img-container">
+        <img class="d-none capture-preview" alt="preview">
+        <div class="form-floating shadow-lg d-none file-input-wrapper">
+          <input type="file" class="form-control" id="img" name="img" placeholder="" accept="image/*">
+          <label for="img">แนบภาพเช็คอิน</label>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1 text-center">
+        <button id="btn-capture" class="btn btn-success w-100">
+          <i class="bi bi-camera-fill"></i> ถ่ายภาพ
+        </button>
+        <button id="btn-retake" class="btn btn-warning w-100 d-none">
+          <i class="bi bi-arrow-counterclockwise"></i> ถ่ายใหม่
+        </button>
+        <button id="btn-retry" class="btn btn-primary w-100 d-none">
+          <i class="bi bi-arrow-clockwise"></i> ลองใหม่
+        </button>
+      </div>
+      <div class="col-12 mb-1">
+        <button class="btn btn-primary w-100 fs-4 save">บันทึกเข้างาน</button>
+      </div>
+    </div>
+  </main>
+  <script src="link.js"></script>
+  <script src="script.js"></script>
+  <script src="functionlist.js"></script>
+</body>
+
+</html>
