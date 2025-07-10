@@ -208,7 +208,6 @@ function setlocation() {
             const userLatLng = L.latLng(lat, lng);
             $('#lat').val(lat);
             $('#lng').val(lng);
-            console.log('ตำแหน่งปัจจุบัน:', userLatLng);
             currentMarker.setLatLng(userLatLng);
 
             const nearest = findNearest(userLatLng);
@@ -286,7 +285,6 @@ $('.save').click(async function (e) {
             text: 'กรุณาถ่ายภาพเช็คอินก่อนบันทึก',
         });
     }
-    console.log(itemData)
     savecheckin(itemData);
 });
 
