@@ -152,39 +152,41 @@ $(async function () {
 function setlocation() {
     console.log('เริ่มฟังก์ชัน setlocation');
 
-    // ตรวจสอบ Geolocation
+    // 1. ตรวจสอบ Geolocation
     if (!navigator.geolocation) {
         console.log('ตรวจสอบ Geolocation: ไม่รองรับ');
         return alert('เบราว์เซอร์ไม่รองรับ Geolocation');
     }
     console.log('ตรวจสอบ Geolocation: รองรับ');
 
-    // สร้างแผนที่
+    // 2. สร้างแผนที่
     console.log('สร้างแผนที่ที่ [20.45, 99.89], zoom 8');
     const map = L.map('map').setView([20.45, 99.89], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    console.log('เพิ่ม tile layer เรียบร้อย');
+    console.log('เพิ่ม tile layer แล้ว');
 
-    // สร้างไอคอนและ marker
+    // 3. สร้างไอคอนและ marker
     console.log('สร้าง userIcon และ currentMarker');
     const userIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-        iconSize: [32, 32], iconAnchor: [16, 32]
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
     });
     const currentMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
 
     console.log('สร้าง checkIcon และ checkinMarker');
     const checkIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-        iconSize: [32, 32], iconAnchor: [16, 32]
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
     });
     const checkinMarker = L.marker([0, 0], { icon: checkIcon }).addTo(map);
 
-    // ฟังก์ชันค้นหาจุดเช็คอินที่ใกล้ที่สุด
+    // 4. ฟังก์ชันค้นหาจุด check-in ที่ใกล้ที่สุด
     function findNearest(latlng) {
-        console.log('เรียก findNearest ที่', latlng);
+        console.log('เรียก findNearest:', latlng);
         let nearest = CHECKIN_LOCATIONS[0];
         let minD = latlng.distanceTo([nearest.lat, nearest.lng]);
         for (let loc of CHECKIN_LOCATIONS) {
@@ -194,102 +196,107 @@ function setlocation() {
                 nearest = loc;
             }
         }
-        console.log('พบ nearest:', nearest, 'ระยะ', minD);
+        console.log('พบจุดใกล้ที่สุด:', nearest, 'ระยะ', minD);
         return nearest;
     }
 
-    // ฟังก์ชัน polling ตำแหน่ง
-    function startWatch() {
-        console.log('เริ่ม startWatch (polling)');
-        let hasGotCoords = false;
-        let intervalMs = 3000;    // เริ่มทุก 3 วิ
-        let timerId;
+    // 5. ฟังก์ชัน polling เรียก getCurrentPosition ทุก 3 วิ
+    function requestPosition() {
+        console.log('Polling geolocation…');
+        navigator.geolocation.getCurrentPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            console.log('ได้ตำแหน่ง:', lat, lng);
 
-        async function pollPosition() {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const userLatLng = L.latLng(lat, lng);
-                console.log('ตำแหน่งสำเร็จ:', lat, lng);
+            // อัปเดตฟิลด์และ marker
+            $('#lat').val(lat);
+            $('#lng').val(lng);
+            const userLatLng = L.latLng(lat, lng);
+            currentMarker.setLatLng(userLatLng).openPopup();
+            map.setView(userLatLng, map.getZoom());
 
-                // อัปเดตฟิลด์และ marker
-                $('#lat').val(lat);
-                $('#lng').val(lng);
-                currentMarker.setLatLng(userLatLng);
+            // หยุด polling เมื่อได้ตำแหน่งแล้ว
+            clearInterval(pollInterval);
 
-                // หาจุด nearest และอัปเดต checkinMarker
-                const nearest = findNearest(userLatLng);
-                const checkLatLng = L.latLng(nearest.lat, nearest.lng);
-                checkinMarker.setLatLng(checkLatLng);
-
-                // เรียก ORS API
-                const orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
-                    `?api_key=${ORS_API_KEY}` +
-                    `&start=${lng},${lat}` +
-                    `&end=${nearest.lng},${nearest.lat}`;
-                console.log('เรียก ORS:', orsUrl);
-
-                fetch(orsUrl).then(resp => {
-                    console.log('ORS status:', resp.status);
-                    return resp.json();
-                }).then(data => {
-                    console.log('ORS data:', data);
-                    if (data.features?.length) {
-                        const coords = data.features[0].geometry.coordinates
-                            .map(c => [c[1], c[0]]);
-                        if (!window.routeLine) {
-                            console.log('สร้าง routeLine');
-                            window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
-                        } else {
-                            console.log('อัปเดต routeLine');
-                            window.routeLine.setLatLngs(coords);
-                        }
-                        const dist = data.features[0].properties.segments[0].distance;
-                        const txt = dist >= 1000
-                            ? (dist / 1000).toFixed(2) + ' กม.'
-                            : dist.toFixed(2) + ' ม.';
-                        console.log('ระยะทาง:', txt);
-                        $('.checklo').val(txt);
-                    } else {
-                        console.log('ไม่มี features ใน ORS response');
-                    }
-                }).catch(e => {
-                    console.error('ORS error:', e);
-                });
-
-                // ถ้าเป็นครั้งแรกให้สลับ interval เป็น 10 วิ
-                if (!hasGotCoords) {
-                    hasGotCoords = true;
-                    clearInterval(timerId);
-                    intervalMs = 10000;
-                    console.log('เปลี่ยน polling ทุก 10 วิ');
-                    timerId = setInterval(pollPosition, intervalMs);
-                }
-            }, err => {
-                console.warn('ยังดึงตำแหน่งไม่ได้:', err);
-                // ไม่สลับ interval จนกว่าจะสำเร็จครั้งแรก
-            }, {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            });
-        }
-
-        // เริ่ม polling
-        timerId = setInterval(pollPosition, intervalMs);
+            // เริ่ม watchPosition
+            startWatch();
+        }, err => {
+            console.warn('ยังไม่ได้ตำแหน่ง (polling):', err);
+            // จะลองใหม่ในครั้งถัดไป
+        }, { enableHighAccuracy: true, timeout: 5000 });
     }
 
-    // เรียก polling ทันที (ไม่ต้องใช้ getCurrentPosition แยก)
-    startWatch();
+    // ตั้งให้เรียก requestPosition ทุก 3 วินาที
+    const pollInterval = setInterval(requestPosition, 3000);
+    // เรียกครั้งแรกทันที
+    requestPosition();
 
-    // ปรับขนาดแผนที่เมื่อ container เปลี่ยนขนาด
-    console.log('ตั้ง ResizeObserver สำหรับ map.invalidateSize');
+    // 6. ฟังก์ชัน watchPosition ติดตามตำแหน่งต่อเนื่อง
+    function startWatch() {
+        console.log('เริ่ม watchPosition');
+        navigator.geolocation.watchPosition(async pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            console.log('watchPosition ได้ตำแหน่ง:', lat, lng);
+
+            // อัปเดตฟิลด์และ marker
+            $('#lat').val(lat);
+            $('#lng').val(lng);
+            const userLatLng = L.latLng(lat, lng);
+            currentMarker.setLatLng(userLatLng);
+
+            // แสดงจุด check-in ที่ใกล้ที่สุด
+            const nearest = findNearest(userLatLng);
+            const checkLatLng = L.latLng(nearest.lat, nearest.lng);
+            console.log('อัปเดต checkinMarker ไปที่:', checkLatLng);
+            checkinMarker.setLatLng(checkLatLng);
+
+            // เรียก ORS API เพื่อคำนวณระยะทาง
+            const orsUrl =
+                `https://api.openrouteservice.org/v2/directions/driving-car` +
+                `?api_key=${ORS_API_KEY}` +
+                `&start=${lng},${lat}` +
+                `&end=${nearest.lng},${nearest.lat}`;
+            console.log('เรียก ORS API ด้วย URL:', orsUrl);
+            try {
+                const resp = await fetch(orsUrl);
+                console.log('ORS status:', resp.status);
+                const data = await resp.json();
+                console.log('ORS JSON:', data);
+
+                if (data.features?.length) {
+                    const coords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    if (!window.routeLine) {
+                        console.log('สร้าง polyline ใหม่');
+                        window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
+                    } else {
+                        console.log('อัปเดต polyline เดิม');
+                        window.routeLine.setLatLngs(coords);
+                    }
+                    const dist = data.features[0].properties.segments[0].distance;
+                    const txt = dist >= 1000
+                        ? (dist / 1000).toFixed(2) + ' กม.'
+                        : dist.toFixed(2) + ' ม.';
+                    console.log('คำนวณระยะทาง:', txt);
+                    $('.checklo').val(txt);
+                } else {
+                    console.log('ไม่มี feature ใน ORS response');
+                }
+            } catch (e) {
+                console.error('ข้อผิดพลาด ORS:', e);
+            }
+        }, err => {
+            console.warn('watchPosition error:', err);
+        }, { enableHighAccuracy: true, timeout: 5000 });
+    }
+
+    // 7. เตรียม ResizeObserver ให้ map ปรับขนาดอัตโนมัติ
+    console.log('ตั้ง ResizeObserver');
     new ResizeObserver(() => {
-        console.log('ResizeObserver: invalidateSize');
+        console.log('ResizeObserver: invalidateSize map');
         map.invalidateSize();
     }).observe(document.querySelector('.ratio'));
 }
-
 
 $('.save').click(async function (e) {
     e.preventDefault();
