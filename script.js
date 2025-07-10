@@ -155,7 +155,11 @@ function setlocation() {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const userIcon = L.icon({ /* ... */ });
+    const userIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+    });
     const currentMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
 
     // ออปชันสำหรับ getCurrentPosition
