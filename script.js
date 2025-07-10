@@ -150,26 +150,36 @@ $(async function () {
 });
 
 function setlocation() {
+    // สร้างแผนที่และเลเยอร์พื้นฐาน
     const map = L.map('map').setView([20.45, 99.89], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    // กำหนดไอคอนสำหรับตำแหน่งผู้ใช้
     const userIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
         iconSize: [32, 32],
         iconAnchor: [16, 32]
     });
     const currentMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
 
-    // ออปชันสำหรับ getCurrentPosition
+    // กำหนดไอคอนสำหรับจุดเช็คอิน
+    const checkIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+    });
+    const checkinMarker = L.marker([0, 0], { icon: checkIcon }).addTo(map);
+
+    // ออปชันสำหรับ Geolocation API
     const geoOpts = {
         enableHighAccuracy: true,
-        timeout: 10000,      // รอสูงสุด 10 วินาที
+        timeout: 10000,  // รอสูงสุด 10 วินาที
         maximumAge: 0
     };
 
-    // ถ้าอุปกรณ์ไม่รองรับ
+    // ถ้าเบราว์เซอร์ไม่รองรับ Geolocation ให้แจ้งผู้ใช้แล้ว return
     if (!navigator.geolocation) {
         return Swal.fire({
             icon: 'error',
@@ -177,15 +187,40 @@ function setlocation() {
         });
     }
 
-    navigator.geolocation.getCurrentPosition(onSuccess, onError, geoOpts);
-
-    function onSuccess(pos) {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        updatePosition(lat, lng);
-        startWatch();    // เริ่มดูตำแหน่งต่อเนื่อง
+    // ฟังก์ชันค้นหาจุดเช็คอินที่ใกล้ที่สุด
+    function findNearest(latlng) {
+        let nearest = CHECKIN_LOCATIONS[0];
+        let minD = latlng.distanceTo([nearest.lat, nearest.lng]);
+        for (let loc of CHECKIN_LOCATIONS) {
+            const d = latlng.distanceTo([loc.lat, loc.lng]);
+            if (d < minD) {
+                minD = d;
+                nearest = loc;
+            }
+        }
+        return nearest;
     }
 
+    // อัพเดทตำแหน่งผู้ใช้บนแผนที่และ input fields
+    function updatePosition(lat, lng) {
+        $('#lat').val(lat);
+        $('#lng').val(lng);
+        const ll = L.latLng(lat, lng);
+        currentMarker.setLatLng(ll);
+        map.setView(ll, 15);
+    }
+
+    // เรียกดูตำแหน่งครั้งแรก
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, geoOpts);
+
+    // เมื่อได้ตำแหน่งสำเร็จ
+    function onSuccess(pos) {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        updatePosition(lat, lng);
+        startWatch();  // เริ่มดูการเปลี่ยนแปลงตำแหน่งต่อเนื่อง
+    }
+
+    // เมื่อเกิด error ในการค้นหาตำแหน่ง
     function onError(err) {
         console.warn('Geolocation error:', err);
         let msg;
@@ -194,7 +229,7 @@ function setlocation() {
                 msg = 'กรุณาอนุญาตแชร์ตำแหน่ง';
                 break;
             case err.POSITION_UNAVAILABLE:
-                msg = 'ไม่พบตำแหน่ง GPS — ลองออกไปกลางแจ้ง';
+                msg = 'ไม่พบสัญญาณ GPS — ลองออกไปกลางแจ้ง';
                 break;
             case err.TIMEOUT:
                 msg = 'ใช้เวลารอนานเกินไป ลองใหม่อีกครั้ง';
@@ -207,27 +242,51 @@ function setlocation() {
             title: 'ไม่สามารถระบุตำแหน่งได้',
             text: msg
         });
-        // ถ้าต้องการลอง watchPosition ต่อ ก็เรียก startWatch() ได้
     }
 
+    // เริ่มดูตำแหน่งแบบ real-time
     function startWatch() {
-        navigator.geolocation.watchPosition(pos => {
-            updatePosition(pos.coords.latitude, pos.coords.longitude);
-            // … (อัพเดท routeLine, checkin marker ตามเดิม)
+        navigator.geolocation.watchPosition(async pos => {
+            const { latitude: lat, longitude: lng } = pos.coords;
+            updatePosition(lat, lng);
+
+            // หา nearest check-in
+            const userLatLng = L.latLng(lat, lng);
+            const nearest = findNearest(userLatLng);
+            const checkLatLng = L.latLng(nearest.lat, nearest.lng);
+            checkinMarker.setLatLng(checkLatLng);
+
+            // วาดเส้นทางด้วย OpenRouteService
+            const orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
+                `?api_key=${ORS_API_KEY}` +
+                `&start=${lng},${lat}` +
+                `&end=${nearest.lng},${nearest.lat}`;
+
+            try {
+                const resp = await fetch(orsUrl);
+                const data = await resp.json();
+                if (data.features?.length) {
+                    const coords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    if (!window.routeLine) {
+                        window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
+                    } else {
+                        window.routeLine.setLatLngs(coords);
+                    }
+                    const dist = data.features[0].properties.segments[0].distance;
+                    const txt = dist >= 1000
+                        ? (dist / 1000).toFixed(2) + ' กม.'
+                        : dist.toFixed(2) + ' ม.';
+                    $('.checklo').val(txt);
+                }
+            } catch (e) {
+                console.error('ORS error:', e);
+            }
         }, err => {
             console.warn('watchPosition error:', err);
-            // ไม่แสดง alert ซ้ำ เพื่อไม่รบกวนผู้ใช้ แต่ log ไว้ให้ดูใน console
         }, geoOpts);
     }
 
-    function updatePosition(lat, lng) {
-        $('#lat').val(lat);
-        $('#lng').val(lng);
-        const ll = L.latLng(lat, lng);
-        currentMarker.setLatLng(ll);
-        map.setView(ll, 15);
-    }
-
+    // ปรับขนาดแผนที่เมื่อ container เปลี่ยนขนาด
     new ResizeObserver(() => map.invalidateSize())
         .observe(document.querySelector('.ratio'));
 }
