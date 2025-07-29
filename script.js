@@ -466,29 +466,17 @@ function savecheckin(itemData) {
 
 async function checkIP() {
     try {
-<<<<<<< HEAD
         let resp = await fetch('https://ipapi.co/json/');
-=======
-        const resp = await fetch('https://ipapi.co/json/');
->>>>>>> bc2444f077e413657efb77ed90efec7facabf4e6
         if (!resp.ok) {
             console.error('Fetch failed:', resp.status);
             throw new Error('ไม่สามารถดึงข้อมูล IP ได้ (HTTP ' + resp.status + ')');
         }
 
-<<<<<<< HEAD
         let data = await resp.json();
         let userIP = data.ip;  // ได้ค่า IP ผู้ใช้
         console.log('IP ผู้ใช้:', userIP);
         $('.checkip').val(userIP);
         let allowedIPs = [
-=======
-        const data = await resp.json();
-        const userIP = data.ip;  // ได้ค่า IP ผู้ใช้
-        console.log('IP ผู้ใช้:', userIP);
-
-        const allowedIPs = [
->>>>>>> bc2444f077e413657efb77ed90efec7facabf4e6
             '103.43.76.93'
         ];
 
