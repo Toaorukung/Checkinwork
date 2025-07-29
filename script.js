@@ -7,6 +7,7 @@ let ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczODA0M
 $(() => {
     showhidepage('header')
     initializeLiff()
+    setip();
     async function initializeLiff() {
         try {
             await liff.init({ liffId: "2005980217-El2nJ87G" })
@@ -483,6 +484,25 @@ async function checkIP() {
         allowedIPs.push(userIP);
 
         return allowedIPs.includes(userIP);
+    } catch (err) {
+        console.error('Error in checkIP():', err);
+        throw new Error('ไม่สามารถดึงข้อมูล IP ได้');
+    }
+}
+
+async function setip() {
+    try {
+        let resp = await fetch('https://ipapi.co/json/');
+        if (!resp.ok) {
+            console.error('Fetch failed:', resp.status);
+            throw new Error('ไม่สามารถดึงข้อมูล IP ได้ (HTTP ' + resp.status + ')');
+        }
+
+        let data = await resp.json();
+        let userIP = data.ip;  // ได้ค่า IP ผู้ใช้
+        console.log('IP ผู้ใช้:', userIP);
+        $('.checkip').val(userIP);
+
     } catch (err) {
         console.error('Error in checkIP():', err);
         throw new Error('ไม่สามารถดึงข้อมูล IP ได้');
