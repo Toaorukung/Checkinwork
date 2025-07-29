@@ -271,11 +271,6 @@ $('.save').click(async function (e) {
             }
         } catch (err) {
             console.error('เช็ค IP ผิดพลาด:', err);
-            return Swal.fire({
-                icon: 'error',
-                title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถตรวจสอบสิทธิ์ IP ได้',
-            });
         }
     }
 
