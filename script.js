@@ -466,21 +466,19 @@ function savecheckin(itemData) {
 
 async function checkIP() {
     try {
-        const resp = await fetch('https://api.ipify.org?format=json');
+        const resp = await fetch('https://ipapi.co/json/');
         if (!resp.ok) {
             console.error('Fetch failed:', resp.status);
             throw new Error('ไม่สามารถดึงข้อมูล IP ได้ (HTTP ' + resp.status + ')');
         }
 
-        const { ip: userIP } = await resp.json();
-        const allowedIPs = [
-            '103.43.76.93',
-        ];
+        const data = await resp.json();
+        const userIP = data.ip;  // ได้ค่า IP ผู้ใช้
+        console.log('IP ผู้ใช้:', userIP);
 
-        // const loc = $('.home').data('loc');
-        // if (loc === 'ไทย') {
-        // }
-        allowedIPs.push(userIP);
+        const allowedIPs = [
+            '103.43.76.93'
+        ];
 
         return allowedIPs.includes(userIP);
     } catch (err) {
