@@ -476,7 +476,6 @@ async function checkIP() {
         let data = await resp.json();
         let userIP = data.ip;  // ได้ค่า IP ผู้ใช้
         console.log('IP ผู้ใช้:', userIP);
-        $('.checkip').val(userIP);
         let allowedIPs = [
             '103.43.76.93'
         ];
