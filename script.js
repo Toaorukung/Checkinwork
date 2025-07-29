@@ -1,8 +1,8 @@
-const CHECKIN_LOCATIONS = [
+let CHECKIN_LOCATIONS = [
     { lat: 20.448406, lng: 99.886832, name: 'จุดเช็คอิน A' },
     { lat: 17.885554, lng: 102.709927, name: 'จุดเช็คอิน B' }
 ];
-const ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczODA0MWEyMGZmMTQzZjU5NGM1NzQwMzNkODg3ZGI4IiwiaCI6Im11cm11cjY0In0=';
+let ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczODA0MWEyMGZmMTQzZjU5NGM1NzQwMzNkODg3ZGI4IiwiaCI6Im11cm11cjY0In0=';
 
 $(() => {
     showhidepage('header')
@@ -154,30 +154,30 @@ function setlocation() {
         return alert('เบราว์เซอร์ไม่รองรับ Geolocation');
     }
 
-    const map = L.map('map').setView([20.45, 99.89], 8);
+    let map = L.map('map').setView([20.45, 99.89], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const userIcon = L.icon({
+    let userIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
         iconSize: [32, 32],
         iconAnchor: [16, 32]
     });
-    const currentMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
+    let currentMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
 
-    const checkIcon = L.icon({
+    let checkIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
         iconSize: [32, 32],
         iconAnchor: [16, 32]
     });
-    const checkinMarker = L.marker([0, 0], { icon: checkIcon }).addTo(map);
+    let checkinMarker = L.marker([0, 0], { icon: checkIcon }).addTo(map);
 
     function findNearest(latlng) {
         let nearest = CHECKIN_LOCATIONS[0];
         let minD = latlng.distanceTo([nearest.lat, nearest.lng]);
         for (let loc of CHECKIN_LOCATIONS) {
-            const d = latlng.distanceTo([loc.lat, loc.lng]);
+            let d = latlng.distanceTo([loc.lat, loc.lng]);
             if (d < minD) {
                 minD = d;
                 nearest = loc;
@@ -187,9 +187,9 @@ function setlocation() {
     }
 
     navigator.geolocation.getCurrentPosition(pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const userLatLng = L.latLng(lat, lng);
+        let lat = pos.coords.latitude;
+        let lng = pos.coords.longitude;
+        let userLatLng = L.latLng(lat, lng);
 
         currentMarker.setLatLng(userLatLng)
             .openPopup();
@@ -203,34 +203,34 @@ function setlocation() {
 
     function startWatch() {
         navigator.geolocation.watchPosition(async pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const userLatLng = L.latLng(lat, lng);
+            let lat = pos.coords.latitude;
+            let lng = pos.coords.longitude;
+            let userLatLng = L.latLng(lat, lng);
             $('#lat').val(lat);
             $('#lng').val(lng);
             currentMarker.setLatLng(userLatLng);
 
-            const nearest = findNearest(userLatLng);
-            const checkLatLng = L.latLng(nearest.lat, nearest.lng);
+            let nearest = findNearest(userLatLng);
+            let checkLatLng = L.latLng(nearest.lat, nearest.lng);
             checkinMarker.setLatLng(checkLatLng)
 
-            const orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
+            let orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
                 `?api_key=${ORS_API_KEY}` +
                 `&start=${lng},${lat}` +
                 `&end=${nearest.lng},${nearest.lat}`;
             try {
-                const resp = await fetch(orsUrl);
-                const data = await resp.json();
+                let resp = await fetch(orsUrl);
+                let data = await resp.json();
                 if (data.features?.length) {
-                    const coords = data.features[0].geometry.coordinates
+                    let coords = data.features[0].geometry.coordinates
                         .map(c => [c[1], c[0]]);
                     if (!window.routeLine) {
                         window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
                     } else {
                         window.routeLine.setLatLngs(coords);
                     }
-                    const dist = data.features[0].properties.segments[0].distance;
-                    const txt = dist >= 1000
+                    let dist = data.features[0].properties.segments[0].distance;
+                    let txt = dist >= 1000
                         ? (dist / 1000).toFixed(2) + ' กม.'
                         : dist.toFixed(2) + ' ม.';
                     $('.checklo').val(txt);
@@ -249,18 +249,18 @@ function setlocation() {
 
 $('.save').click(async function (e) {
     e.preventDefault();
-    const itemData = await getFormData('home');
+    let itemData = await getFormData('home');
     if (!checkvalue(itemData, [])) return;
 
-    const distStr = $('.checklo').val().trim();
-    const dist = parseFloat(distStr);
+    let distStr = $('.checklo').val().trim();
+    let dist = parseFloat(distStr);
 
-    const isKm = distStr.endsWith(' กม.');
-    const isM = distStr.endsWith(' ม.');
+    let isKm = distStr.endsWith(' กม.');
+    let isM = distStr.endsWith(' ม.');
 
     if (isKm || (isM && dist > 1)) {
         try {
-            const allowed = await checkIP();
+            let allowed = await checkIP();
             if (!allowed) {
                 return Swal.fire({
                     icon: 'warning',
@@ -411,7 +411,7 @@ function savecheckin(itemData) {
                     allowOutsideClick: false,
                     confirmButtonText: 'ตกลง',
                 }).then(() => {
-                    const message = {
+                    let message = {
                         type: 'text',
                         text: 'เลิกงาน'
                     };
@@ -466,17 +466,17 @@ function savecheckin(itemData) {
 
 async function checkIP() {
     try {
-        const resp = await fetch('https://ipapi.co/json/');
+        let resp = await fetch('https://ipapi.co/json/');
         if (!resp.ok) {
             console.error('Fetch failed:', resp.status);
             throw new Error('ไม่สามารถดึงข้อมูล IP ได้ (HTTP ' + resp.status + ')');
         }
 
-        const data = await resp.json();
-        const userIP = data.ip;  // ได้ค่า IP ผู้ใช้
+        let data = await resp.json();
+        let userIP = data.ip;  // ได้ค่า IP ผู้ใช้
         console.log('IP ผู้ใช้:', userIP);
-
-        const allowedIPs = [
+        $('.checkip').val(userIP);
+        let allowedIPs = [
             '103.43.76.93'
         ];
 
