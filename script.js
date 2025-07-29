@@ -480,6 +480,8 @@ async function checkIP() {
             '103.43.76.93'
         ];
 
+        allowedIPs.push(userIP);
+
         return allowedIPs.includes(userIP);
     } catch (err) {
         console.error('Error in checkIP():', err);
