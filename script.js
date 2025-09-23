@@ -11,6 +11,7 @@ $(() => {
     async function initializeLiff() {
         try {
             await liff.init({ liffId: "2005980217-El2nJ87G" })
+            // await liff.init({ liffId: "2005980217-oPWaeg57" })
             if (liff.isLoggedIn()) {
                 getUserProfile()
             } else {
@@ -186,7 +187,10 @@ function setlocation() {
         }
         return nearest;
     }
-
+    map.on('moveend', function () {
+        $('#lat').val(map._lastCenter.lat);
+        $('#lng').val(map._lastCenter.lng);
+    });
     navigator.geolocation.getCurrentPosition(pos => {
         let lat = pos.coords.latitude;
         let lng = pos.coords.longitude;
@@ -207,8 +211,7 @@ function setlocation() {
             let lat = pos.coords.latitude;
             let lng = pos.coords.longitude;
             let userLatLng = L.latLng(lat, lng);
-            $('#lat').val(lat);
-            $('#lng').val(lng);
+
             currentMarker.setLatLng(userLatLng);
 
             let nearest = findNearest(userLatLng);
