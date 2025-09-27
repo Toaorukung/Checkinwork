@@ -1,6 +1,7 @@
 let CHECKIN_LOCATIONS = [
     { lat: 20.448406, lng: 99.886832, name: 'จุดเช็คอิน A' },
-    { lat: 17.885554, lng: 102.709927, name: 'จุดเช็คอิน B' }
+    { lat: 17.885554, lng: 102.709927, name: 'จุดเช็คอิน B' },
+    { lat: 13.710571, lng: 100.573801, name: 'จุดเช็คอิน c' },
 ];
 let ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczODA0MWEyMGZmMTQzZjU5NGM1NzQwMzNkODg3ZGI4IiwiaCI6Im11cm11cjY0In0=';
 
@@ -187,24 +188,26 @@ function setlocation() {
         }
         return nearest;
     }
+
     map.on('moveend', function () {
         $('#lat').val(map._lastCenter.lat);
         $('#lng').val(map._lastCenter.lng);
     });
+
+    // เริ่ม watchPosition ทันที ไม่ต้องรอ getCurrentPosition
+    startWatch();
+
+    // ใช้ getCurrentPosition เพื่อ setView ครั้งแรก (แต่ไม่บล็อก startWatch)
     navigator.geolocation.getCurrentPosition(pos => {
         let lat = pos.coords.latitude;
         let lng = pos.coords.longitude;
         let userLatLng = L.latLng(lat, lng);
 
-        currentMarker.setLatLng(userLatLng)
-            .openPopup();
+        currentMarker.setLatLng(userLatLng).openPopup();
         map.setView(userLatLng, 15);
-
-        startWatch();
     }, err => {
         console.warn('ไม่สามารถหา location ครั้งแรกได้:', err);
-        startWatch();
-    }, { enableHighAccuracy: true });
+    }, { enableHighAccuracy: true, timeout: 5000 });
 
     function startWatch() {
         navigator.geolocation.watchPosition(async pos => {
@@ -216,7 +219,7 @@ function setlocation() {
 
             let nearest = findNearest(userLatLng);
             let checkLatLng = L.latLng(nearest.lat, nearest.lng);
-            checkinMarker.setLatLng(checkLatLng)
+            checkinMarker.setLatLng(checkLatLng);
 
             let orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
                 `?api_key=${ORS_API_KEY}` +
@@ -261,8 +264,7 @@ $('.save').click(async function (e) {
 
     let isKm = distStr.endsWith(' กม.');
     let isM = distStr.endsWith(' ม.');
-
-    if (isKm || (isM && dist > 1)) {
+    if (!isKm && isM && dist <= 20) {
         try {
             let allowed = await checkIP();
             if (!allowed) {
@@ -284,6 +286,7 @@ $('.save').click(async function (e) {
             text: 'กรุณาถ่ายภาพเช็คอินก่อนบันทึก',
         });
     }
+    console.log(itemData);
     savecheckin(itemData);
 });
 
@@ -463,45 +466,42 @@ function savecheckin(itemData) {
         });
 }
 
-async function checkIP() {
+async function getUserIP() {
     try {
-        let resp = await fetch('https://ipapi.co/json/');
+        let resp = await fetch('https://api64.ipify.org?format=json');
         if (!resp.ok) {
             console.error('Fetch failed:', resp.status);
-            throw new Error('ไม่สามารถดึงข้อมูล IP ได้ (HTTP ' + resp.status + ')');
+            return null;
         }
 
         let data = await resp.json();
-        let userIP = data.ip;  // ได้ค่า IP ผู้ใช้
-        console.log('IP ผู้ใช้:', userIP);
-        let allowedIPs = [
-            '103.43.76.93'
-        ];
-
-        allowedIPs.push(userIP);
-
-        return allowedIPs.includes(userIP);
+        return data.ip || null;
     } catch (err) {
-        console.error('Error in checkIP():', err);
-        throw new Error('ไม่สามารถดึงข้อมูล IP ได้');
+        console.error('Error in getUserIP():', err);
+        return null;
     }
 }
 
-async function setip() {
-    try {
-        let resp = await fetch('https://ipapi.co/json/');
-        if (!resp.ok) {
-            console.error('Fetch failed:', resp.status);
-            throw new Error('ไม่สามารถดึงข้อมูล IP ได้ (HTTP ' + resp.status + ')');
-        }
+async function checkIP() {
+    let userIP = await getUserIP();
+    if (!userIP) return false;
 
-        let data = await resp.json();
-        let userIP = data.ip;  // ได้ค่า IP ผู้ใช้
+    console.log('IP ผู้ใช้:', userIP);
+
+    let allowedIPs = [
+        '103.43.76.93'
+    ];
+
+    return allowedIPs.includes(userIP);
+}
+
+async function setip() {
+    let userIP = await getUserIP();
+    if (userIP) {
         console.log('IP ผู้ใช้:', userIP);
         $('.checkip').val(userIP);
-
-    } catch (err) {
-        console.error('Error in checkIP():', err);
-        throw new Error('ไม่สามารถดึงข้อมูล IP ได้');
+    } else {
+        console.warn('ไม่สามารถดึงข้อมูล IP ได้');
+        $('.checkip').val('ไม่สามารถดึง IP');
     }
 }
