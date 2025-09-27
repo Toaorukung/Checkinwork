@@ -1,7 +1,6 @@
 let CHECKIN_LOCATIONS = [
     { lat: 20.448406, lng: 99.886832, name: 'จุดเช็คอิน A' },
-    { lat: 17.885554, lng: 102.709927, name: 'จุดเช็คอิน B' },
-    { lat: 13.710571, lng: 100.573801, name: 'จุดเช็คอิน c' },
+    { lat: 17.885689, lng: 102.709715, name: 'จุดเช็คอิน B' },
 ];
 let ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczODA0MWEyMGZmMTQzZjU5NGM1NzQwMzNkODg3ZGI4IiwiaCI6Im11cm11cjY0In0=';
 
