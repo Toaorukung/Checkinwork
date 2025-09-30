@@ -270,7 +270,8 @@ $('.save').click(async function (e) {
                 return Swal.fire({
                     icon: 'warning',
                     title: 'ยังไม่ถึงจุดเช็คอิน',
-                    text: `กรุณาเดินไปยังจุดเช็คอินก่อนบันทึก ${isKm} ${isM} ${dist}`,
+                    text: `กรุณาเดินไปยังจุดเช็คอินก่อนบันทึก
+                    ${isKm} ${isM} ${dist}`,
                 });
             }
         } catch (err) {
