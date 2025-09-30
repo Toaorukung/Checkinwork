@@ -263,7 +263,7 @@ $('.save').click(async function (e) {
 
     let isKm = distStr.endsWith(' กม.');
     let isM = distStr.endsWith(' ม.');
-    if (!isKm && isM && dist <= 20) {
+    if (isKm && !isM && dist >= 20) {
         try {
             let allowed = await checkIP();
             if (!allowed) {
