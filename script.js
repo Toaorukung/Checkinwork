@@ -263,14 +263,14 @@ $('.save').click(async function (e) {
 
     let isKm = distStr.endsWith(' กม.');
     let isM = distStr.endsWith(' ม.');
-    if (!isKm && isM && dist <= 100) {
+    if (!isKm && isM && dist <= 20) {
         try {
             let allowed = await checkIP();
             if (!allowed) {
                 return Swal.fire({
                     icon: 'warning',
                     title: 'ยังไม่ถึงจุดเช็คอิน',
-                    text: 'กรุณาเดินไปยังจุดเช็คอินก่อนบันทึก',
+                    text: `กรุณาเดินไปยังจุดเช็คอินก่อนบันทึก ${isKm} ${isM} ${dist}`,
                 });
             }
         } catch (err) {
