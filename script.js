@@ -193,15 +193,14 @@ function setlocation() {
         $('#lng').val(map._lastCenter.lng);
     });
 
-    // เริ่ม watchPosition ทันที ไม่ต้องรอ getCurrentPosition
     startWatch();
 
-    // ใช้ getCurrentPosition เพื่อ setView ครั้งแรก (แต่ไม่บล็อก startWatch)
     navigator.geolocation.getCurrentPosition(pos => {
         let lat = pos.coords.latitude;
         let lng = pos.coords.longitude;
         let userLatLng = L.latLng(lat, lng);
-
+        $('#lat').val(lat);
+        $('#lng').val(lng);
         currentMarker.setLatLng(userLatLng).openPopup();
         map.setView(userLatLng, 15);
     }, err => {
@@ -213,7 +212,8 @@ function setlocation() {
             let lat = pos.coords.latitude;
             let lng = pos.coords.longitude;
             let userLatLng = L.latLng(lat, lng);
-
+            $('#lat').val(lat);
+            $('#lng').val(lng);
             currentMarker.setLatLng(userLatLng);
 
             let nearest = findNearest(userLatLng);
