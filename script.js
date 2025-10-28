@@ -151,6 +151,108 @@ $(async function () {
     $retry.on('click', startCamera);
 });
 
+// function setlocation() {
+//     if (!navigator.geolocation) {
+//         return alert('เบราว์เซอร์ไม่รองรับ Geolocation');
+//     }
+
+//     let map = L.map('map').setView([20.45, 99.89], 8);
+//     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//         attribution: '&copy; OpenStreetMap contributors'
+//     }).addTo(map);
+
+//     let userIcon = L.icon({
+//         iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+//         iconSize: [32, 32],
+//         iconAnchor: [16, 32]
+//     });
+//     let currentMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
+
+//     let checkIcon = L.icon({
+//         iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+//         iconSize: [32, 32],
+//         iconAnchor: [16, 32]
+//     });
+//     let checkinMarker = L.marker([0, 0], { icon: checkIcon }).addTo(map);
+
+//     function findNearest(latlng) {
+//         let nearest = CHECKIN_LOCATIONS[0];
+//         let minD = latlng.distanceTo([nearest.lat, nearest.lng]);
+//         for (let loc of CHECKIN_LOCATIONS) {
+//             let d = latlng.distanceTo([loc.lat, loc.lng]);
+//             if (d < minD) {
+//                 minD = d;
+//                 nearest = loc;
+//             }
+//         }
+//         return nearest;
+//     }
+
+//     map.on('moveend', function () {
+//         $('#lat').val(map._lastCenter.lat);
+//         $('#lng').val(map._lastCenter.lng);
+//     });
+
+//     startWatch();
+
+//     navigator.geolocation.getCurrentPosition(pos => {
+//         let lat = pos.coords.latitude;
+//         let lng = pos.coords.longitude;
+//         let userLatLng = L.latLng(lat, lng);
+//         $('#lat').val(lat);
+//         $('#lng').val(lng);
+//         currentMarker.setLatLng(userLatLng).openPopup();
+//         map.setView(userLatLng, 15);
+//     }, err => {
+//         console.warn('ไม่สามารถหา location ครั้งแรกได้:', err);
+//     }, { enableHighAccuracy: true, timeout: 5000 });
+
+//     function startWatch() {
+//         navigator.geolocation.watchPosition(async pos => {
+//             let lat = pos.coords.latitude;
+//             let lng = pos.coords.longitude;
+//             let userLatLng = L.latLng(lat, lng);
+//             $('#lat').val(lat);
+//             $('#lng').val(lng);
+//             currentMarker.setLatLng(userLatLng);
+
+//             let nearest = findNearest(userLatLng);
+//             let checkLatLng = L.latLng(nearest.lat, nearest.lng);
+//             checkinMarker.setLatLng(checkLatLng);
+
+//             let orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
+//                 `?api_key=${ORS_API_KEY}` +
+//                 `&start=${lng},${lat}` +
+//                 `&end=${nearest.lng},${nearest.lat}`;
+//             try {
+//                 let resp = await fetch(orsUrl);
+//                 let data = await resp.json();
+//                 if (data.features?.length) {
+//                     let coords = data.features[0].geometry.coordinates
+//                         .map(c => [c[1], c[0]]);
+//                     if (!window.routeLine) {
+//                         window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
+//                     } else {
+//                         window.routeLine.setLatLngs(coords);
+//                     }
+//                     let dist = data.features[0].properties.segments[0].distance;
+//                     let txt = dist >= 1000
+//                         ? (dist / 1000).toFixed(2) + ' กม.'
+//                         : dist.toFixed(2) + ' ม.';
+//                     $('.checklo').val(txt);
+//                 }
+//             } catch (e) {
+//                 console.error('ORS error:', e);
+//             }
+//         }, err => {
+//             console.warn('Geolocation error:', err);
+//         }, { enableHighAccuracy: true });
+//     }
+
+//     new ResizeObserver(() => map.invalidateSize())
+//         .observe(document.querySelector('.ratio'));
+// }
+
 function setlocation() {
     if (!navigator.geolocation) {
         return alert('เบราว์เซอร์ไม่รองรับ Geolocation');
@@ -188,9 +290,46 @@ function setlocation() {
         return nearest;
     }
 
+    async function updateDistanceAndRoute(lat, lng) {
+        let userLatLng = L.latLng(lat, lng);
+        let nearest = findNearest(userLatLng);
+        let checkLatLng = L.latLng(nearest.lat, nearest.lng);
+        checkinMarker.setLatLng(checkLatLng);
+
+        let orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
+            `?api_key=${ORS_API_KEY}` +
+            `&start=${lng},${lat}` +
+            `&end=${nearest.lng},${nearest.lat}`;
+        try {
+            let resp = await fetch(orsUrl);
+            let data = await resp.json();
+            if (data.features?.length) {
+                let coords = data.features[0].geometry.coordinates
+                    .map(c => [c[1], c[0]]);
+                if (!window.routeLine) {
+                    window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
+                } else {
+                    window.routeLine.setLatLngs(coords);
+                }
+                let dist = data.features[0].properties.segments[0].distance;
+                let txt = dist >= 1000
+                    ? (dist / 1000).toFixed(2) + ' กม.'
+                    : dist.toFixed(2) + ' ม.';
+                $('.checklo').val(txt);
+            }
+        } catch (e) {
+            console.error('ORS error:', e);
+        }
+    }
+
     map.on('moveend', function () {
-        $('#lat').val(map._lastCenter.lat);
-        $('#lng').val(map._lastCenter.lng);
+        let lat = map.getCenter().lat;
+        let lng = map.getCenter().lng;
+        $('#lat').val(lat);
+        $('#lng').val(lng);
+        currentMarker.setLatLng([lat, lng]);
+
+        updateDistanceAndRoute(lat, lng);
     });
 
     startWatch();
@@ -203,6 +342,8 @@ function setlocation() {
         $('#lng').val(lng);
         currentMarker.setLatLng(userLatLng).openPopup();
         map.setView(userLatLng, 15);
+
+        updateDistanceAndRoute(lat, lng);
     }, err => {
         console.warn('ไม่สามารถหา location ครั้งแรกได้:', err);
     }, { enableHighAccuracy: true, timeout: 5000 });
@@ -211,39 +352,11 @@ function setlocation() {
         navigator.geolocation.watchPosition(async pos => {
             let lat = pos.coords.latitude;
             let lng = pos.coords.longitude;
-            let userLatLng = L.latLng(lat, lng);
             $('#lat').val(lat);
             $('#lng').val(lng);
-            currentMarker.setLatLng(userLatLng);
+            currentMarker.setLatLng([lat, lng]);
 
-            let nearest = findNearest(userLatLng);
-            let checkLatLng = L.latLng(nearest.lat, nearest.lng);
-            checkinMarker.setLatLng(checkLatLng);
-
-            let orsUrl = `https://api.openrouteservice.org/v2/directions/driving-car` +
-                `?api_key=${ORS_API_KEY}` +
-                `&start=${lng},${lat}` +
-                `&end=${nearest.lng},${nearest.lat}`;
-            try {
-                let resp = await fetch(orsUrl);
-                let data = await resp.json();
-                if (data.features?.length) {
-                    let coords = data.features[0].geometry.coordinates
-                        .map(c => [c[1], c[0]]);
-                    if (!window.routeLine) {
-                        window.routeLine = L.polyline(coords, { weight: 4, color: 'blue' }).addTo(map);
-                    } else {
-                        window.routeLine.setLatLngs(coords);
-                    }
-                    let dist = data.features[0].properties.segments[0].distance;
-                    let txt = dist >= 1000
-                        ? (dist / 1000).toFixed(2) + ' กม.'
-                        : dist.toFixed(2) + ' ม.';
-                    $('.checklo').val(txt);
-                }
-            } catch (e) {
-                console.error('ORS error:', e);
-            }
+            await updateDistanceAndRoute(lat, lng);
         }, err => {
             console.warn('Geolocation error:', err);
         }, { enableHighAccuracy: true });
