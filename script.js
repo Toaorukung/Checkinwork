@@ -11,7 +11,6 @@ $(() => {
     async function initializeLiff() {
         try {
             await liff.init({ liffId: "2005980217-El2nJ87G" })
-            // await liff.init({ liffId: "2005980217-oPWaeg57" })
             if (liff.isLoggedIn()) {
                 getUserProfile()
             } else {
