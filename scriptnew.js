@@ -242,25 +242,6 @@ $('.save').click(async function (e) {
 
     if (!checkvalue(itemData, [])) return;
 
-    let distStr = $('.checklo').val().trim();
-    let dist = parseFloat(distStr);
-
-    let isKm = distStr.endsWith(' กม.');
-    let isM = distStr.endsWith(' ม.');
-    if (isKm && !isM && dist >= 20) {
-        try {
-            let allowed = await checkIP();
-            if (!allowed) {
-                return Swal.fire({
-                    icon: 'warning',
-                    title: 'ยังไม่ถึงจุดเช็คอิน',
-                    text: `กรุณาเดินไปยังจุดเช็คอินก่อนบันทึก`,
-                });
-            }
-        } catch (err) {
-            console.error('เช็ค IP ผิดพลาด:', err);
-        }
-    }
 
     // 🔴 แก้ไข: ตรวจสอบว่ามีการสแกนใบหน้าสำเร็จ หรือแนบไฟล์ด้วยตนเอง
     if (!itemData.imgBase64 && $('#img')[0].files.length === 0) {
