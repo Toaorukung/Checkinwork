@@ -60,11 +60,16 @@
           <video id="video" class="w-100 h-100 mirror" playsinline autoplay muted></video>
         </div>
       </div>
+      <div class="col-12 mb-1">
+        <div class="ratio ratio-16x9 mb-3 border rounded overflow-hidden bg-dark video-container">
+          <video id="video" class="w-100 h-100 mirror" playsinline autoplay muted></video>
+          <canvas id="canvas" class="w-100 h-100 position-absolute top-0 start-0"></canvas>
+        </div>
+      </div>
 
       <div class="col-12 mb-1 img-container">
-        <img class="d-none capture-preview" id="capturedImage" alt="captured face">
-
-        <div class="form-floating shadow-lg d-none file-input-wrapper" id="fileInputWrapper">
+        <img class="d-none capture-preview" alt="preview">
+        <div class="form-floating shadow-lg d-none file-input-wrapper">
           <input type="file" class="form-control" id="img" name="img" placeholder="" accept="image/*">
           <label for="img">แนบภาพเช็คอิน</label>
         </div>
