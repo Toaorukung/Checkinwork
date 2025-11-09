@@ -16,7 +16,6 @@ let camera;
 
 async function startFaceScannerWrapper() {
     const $statusEl = $('#status');
-    const $fileInputWrapper = $('#fileInputWrapper');
 
     try {
         // 🔴 Dynamic Import: โหลด MediaPipe Modules
@@ -28,6 +27,7 @@ async function startFaceScannerWrapper() {
         const $timerEl = $('#timer');
         const $capturedImageEl = $('#capturedImage');
         const $saveButton = $('.save');
+        const $fileInputWrapper = $('#fileInputWrapper');
 
         let faceStartTime = null;
         let isCaptured = false;
@@ -87,7 +87,7 @@ async function startFaceScannerWrapper() {
                         $($video).hide();
                         $('.video-container').hide();
                         $fileInputWrapper.hide(); // ซ่อนส่วนแนบไฟล์
-                        
+
                         $statusEl.text("✅ บันทึกภาพเสร็จสมบูรณ์!");
                         $timerEl.css('color', '#c0392b');
 
@@ -119,7 +119,7 @@ async function startFaceScannerWrapper() {
         camera.start().catch(err => {
             $statusEl.text("🚨 ข้อผิดพลาด: ไม่สามารถเข้าถึงกล้อง! กรุณาแนบภาพเช็คอินด้วยตนเอง");
             console.error("Error starting camera:", err);
-            
+
             // 🟢 เปิดส่วนแนบไฟล์เมื่อกล้องใช้งานไม่ได้
             $('.video-container').hide();
             $fileInputWrapper.removeClass('d-none').show();
@@ -198,9 +198,9 @@ function checkuser(uuid) {
                     $('.home').data('loc', res.loc);
                     $('.home').data('web', res.web);
                     $('.home').data('name', res.name);
-                    
+
                     // 🟢 เริ่ม Face Scanner หลัง checkuser สำเร็จ
-                    startFaceScannerWrapper() 
+                    startFaceScannerWrapper()
                 });
             } else {
                 Swal.fire({
@@ -228,11 +228,11 @@ function checkuser(uuid) {
 
 $('.save').click(async function (e) {
     e.preventDefault();
-    
+
     let itemData = await getFormData('home');
-    
+
     // 🔴 เพิ่ม: ดึง Base64 Image Data ที่ได้จากการสแกนใบหน้า
-    const scannedImageData = $('#capturedImage').attr('src'); 
+    const scannedImageData = $('#capturedImage').attr('src');
 
     // หากมีการสแกนสำเร็จ ให้ใส่ Base64 Image Data ลงใน itemData
     if (scannedImageData && scannedImageData.startsWith('data:image/jpeg')) {
@@ -270,7 +270,7 @@ $('.save').click(async function (e) {
             text: 'กรุณาถ่ายภาพเช็คอิน หรือแนบภาพด้วยตนเอง',
         });
     }
-    
+
     // ถ้ามีการแนบไฟล์ด้วยตนเอง ให้ใช้ไฟล์นั้นแทน
     if ($('#img')[0].files.length > 0) {
         // ⚠️ โค้ดนี้ต้องแปลงไฟล์เป็น Base64 ก่อนส่ง ถ้า API ต้องการ Base64
