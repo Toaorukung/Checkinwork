@@ -22,12 +22,8 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-
-
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js"
-    crossorigin="anonymous"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -54,18 +50,45 @@
           alt="">
         <p class="name mb-1 mt-1 fw-bold fs-4"></p>
       </div>
-      <div class="col-12 mb-1">
-        <p id="status"></p>
-      </div>
-      <div class="col-12 mb-1">
-        <div class="ratio ratio-16x9 mb-3 border rounded overflow-hidden bg-dark video-container">
-          <video id="video" class="w-100 h-100 mirror" playsinline autoplay muted></video>
+
+      <div class="col-6 mb-1">
+        <div class="form-floating">
+          <input class="form-control" type="text" id="lat" placeholder="ละติจูด" aria-label="ละติจูด" readonly>
+          <label for="lat">ละติจูด</label>
         </div>
       </div>
+
+      <div class="col-6 mb-1">
+        <div class="form-floating">
+          <input class="form-control" type="text" id="lng" placeholder="ลองจิจูด" aria-label="ลองจิจูด" readonly>
+          <label for="lng">ลองจิจูด</label>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1">
+        <div class="form-floating">
+          <input class="form-control checklo" type="text" id="checklo" placeholder="อยู่ห่างจากจุดเช็คอิน"
+            aria-label="อยู่ห่างจากจุดเช็คอิน" disabled readonly>
+          <label for="checklo">อยู่ห่างจากจุดเช็คอิน</label>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1">
+        <div class="form-floating">
+          <input class="form-control checkip" type="text" placeholder="IP" aria-label="IP" disabled readonly>
+          <label for="checkip">IP</label>
+        </div>
+      </div>
+
+      <div class="col-12 mb-1">
+        <div class="ratio ratio-16x9">
+          <div id="map" class="w-100 h-100 rounded"></div>
+        </div>
+      </div>
+
       <div class="col-12 mb-1">
         <div class="ratio ratio-16x9 mb-3 border rounded overflow-hidden bg-dark video-container">
           <video id="video" class="w-100 h-100 mirror" playsinline autoplay muted></video>
-          <canvas id="canvas" class="w-100 h-100 position-absolute top-0 start-0"></canvas>
         </div>
       </div>
 
@@ -77,13 +100,24 @@
         </div>
       </div>
 
+      <div class="col-12 mb-1 text-center">
+        <button id="btn-capture" class="btn btn-success w-100">
+          <i class="bi bi-camera-fill"></i> ถ่ายภาพ
+        </button>
+        <button id="btn-retake" class="btn btn-warning w-100 d-none">
+          <i class="bi bi-arrow-counterclockwise"></i> ถ่ายใหม่
+        </button>
+        <button id="btn-retry" class="btn btn-primary w-100 d-none">
+          <i class="bi bi-arrow-clockwise"></i> ลองใหม่
+        </button>
+      </div>
       <div class="col-12 mb-1">
         <button class="btn btn-primary w-100 fs-4 save">บันทึกเข้างาน</button>
       </div>
     </div>
   </main>
   <script src="link.js"></script>
-  <script src="scriptnew.js"></script>
+  <script src="script.js"></script>
   <script src="functionlist.js"></script>
 </body>
 
