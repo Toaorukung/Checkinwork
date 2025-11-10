@@ -123,7 +123,7 @@ async function startFaceScannerWrapper() {
             // 🟢 เปิดส่วนแนบไฟล์เมื่อกล้องใช้งานไม่ได้
             $('.video-container').hide();
             $fileInputWrapper.removeClass('d-none').show();
-            $saveButton.prop('disabled', false); // เปิดปุ่มบันทึกเพื่อให้ผู้ใช้แนบและบันทึกได้
+            $saveButton.prop('disabled', false);
         });
 
     } catch (e) {
@@ -231,12 +231,10 @@ $('.save').click(async function (e) {
 
     let itemData = await getFormData('home');
 
-    // 🔴 เพิ่ม: ดึง Base64 Image Data ที่ได้จากการสแกนใบหน้า
-    const scannedImageData = $('#capturedImage').attr('src');
 
-    // หากมีการสแกนสำเร็จ ให้ใส่ Base64 Image Data ลงใน itemData
+    const scannedImageData = $('.capture-preview').attr('src');
     if (scannedImageData && scannedImageData.startsWith('data:image/jpeg')) {
-        itemData.imgBase64 = scannedImageData; // 👈 ตรงนี้คือ Base64 string ที่จะถูกส่งไป
+        itemData.imgBase64 = scannedImageData;
     }
 
     if (!checkvalue(itemData, [])) return;
