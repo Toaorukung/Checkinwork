@@ -236,15 +236,13 @@ $('.save').click(async function (e) {
 
     // หากมีการสแกนสำเร็จ ให้ใส่ Base64 Image Data ลงใน itemData
     if (scannedImageData && scannedImageData.startsWith('data:image/jpeg')) {
-        itemData.imgBase64 = scannedImageData;
+        itemData.imgBase64 = scannedImageData; // 👈 ตรงนี้คือ Base64 string ที่จะถูกส่งไป
     }
-
 
     if (!checkvalue(itemData, [])) return;
 
-
     // 🔴 แก้ไข: ตรวจสอบว่ามีการสแกนใบหน้าสำเร็จ หรือแนบไฟล์ด้วยตนเอง
-    if (!itemData.imgBase64 && $('#img')[0].files.length === 0) {
+    if (!itemData.imgBase64 && $('#img')[0].files.length === 0) { // **เงื่อนไขตรวจสอบยังคงใช้ได้**
         return Swal.fire({
             icon: 'error',
             title: 'บันทึกไม่สำเร็จ',
@@ -255,13 +253,20 @@ $('.save').click(async function (e) {
     // ถ้ามีการแนบไฟล์ด้วยตนเอง ให้ใช้ไฟล์นั้นแทน
     if ($('#img')[0].files.length > 0) {
         // ⚠️ โค้ดนี้ต้องแปลงไฟล์เป็น Base64 ก่อนส่ง ถ้า API ต้องการ Base64
-        // เนื่องจากไม่มีโค้ดแปลงไฟล์ในฟังก์ชันนี้ คุณอาจต้องเพิ่ม
         // สำหรับตอนนี้ ให้ใช้ itemData ปกติ และเซิร์ฟเวอร์ต้องจัดการ multipart/form-data
         console.log("Using uploaded file instead of scanned image.");
+
+        // **ต้องเพิ่มโค้ดเพื่อแปลงไฟล์ที่แนบเป็น Base64 (ถ้า API ต้องการ)**
+        await convertFileToBase64($('#img')[0].files[0], (base64) => {
+            itemData.imgBase64 = base64; // กำหนด Base64 จากไฟล์ที่ผู้ใช้แนบ
+            console.log(itemData);
+            savecheckin(itemData);
+        });
+        return; // หยุดการทำงานต่อ เพื่อรอการแปลงไฟล์
     }
 
     console.log(itemData);
-    savecheckin(itemData);
+    savecheckin(itemData); // ส่งข้อมูลเมื่อสแกนสำเร็จ
 });
 
 
