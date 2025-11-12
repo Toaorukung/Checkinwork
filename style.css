@@ -1,44 +1,431 @@
-    .mirror {
-        transform: scaleX(-1);
+:root {
+    --text-custom-light: #000000;
+    --text-custom-dark: #f8ebbf;
+    --bg-custom-light: #ffffff;
+    --bg-custom-dark: #000000;
+}
+
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding-top: 40px;
+}
+
+body[data-bs-theme="dark"] .bg-video {
+    filter: brightness(0.5);
+}
+
+main.login#login,
+header {
+    margin-top: 0px;
+}
+
+body::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    filter: blur(2px);
+    z-index: -2;
+}
+
+.text-at {
+    animation: fadeIn 1s ease-out;
+}
+
+.theme-dependent {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body[data-bs-theme="dark"] .text-custom {
+    color: var(--text-custom-dark) !important;
+}
+
+.bg-custom {
+    background: var(--bg-custom-light) !important;
+    color: var(--text-custom-light) !important;
+}
+
+body[data-bs-theme="dark"] .bg-custom {
+    background: var(--bg-custom-dark) !important;
+    color: var(--text-custom-dark) !important;
+}
+
+.text-custom {
+    color: var(--text-custom-light) !important;
+}
+
+.nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.nav-item {
+    cursor: pointer;
+    font-weight: 500;
+    text-align: center;
+    transition: color 0.3s ease;
+    color: var(--text-custom-light);
+}
+
+body[data-bs-theme="dark"] .nav-item {
+    color: var(--text-custom-dark);
+}
+
+.icon-wrap {
+    display: inline-block;
+    line-height: 1;
+    position: relative;
+}
+
+.nav-item:hover i,
+.nav-item:hover span {
+    color: #ffbe00;
+}
+
+/* มือถือ: badge บน icon */
+.badge-cart-inline,
+.badge-ticket-inline {
+    display: none !important;
+}
+
+/* PC (>=992px): ซ่อน badge บน icon แล้วแสดงหลังข้อความ */
+@media (min-width: 992px) {
+
+    .badge-cart,
+    .badge-ticket {
+        display: none !important;
     }
 
-    .capture-preview {
+    .badge-cart-inline,
+    .badge-ticket-inline {
+        display: inline-block !important;
+        font-size: 0.75rem;
+    }
+}
+
+/* มือถือ: แนวตั้ง */
+@media (max-width: 768px) {
+    .nav-icons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+}
+
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand img {
+    max-height: 40px;
+    /* border-radius: 50%; */
+}
+
+.navbar-brand i {
+    font-size: 1.8rem;
+    color: #6c757d;
+}
+
+.navbar-brand:hover i {
+    color: #0d6efd;
+}
+
+.navbar-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .navbar-nav {
+        flex-direction: column;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .user-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .dark-mode-icon {
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-logout {
         width: 100%;
-        margin-bottom: .5rem;
-        border-radius: .25rem;
+        text-align: center;
+    }
+}
+
+.dark-mode-icon {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+    transition: color 0.3s;
+}
+
+.dark-mode-icon:hover {
+    color: #0d6efd;
+}
+
+.nav-item.dropdown .dropdown-menu {
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+}
+
+.nav-item.dropdown:hover .dropdown-menu,
+.nav-item.dropdown .dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.nav-item .dropdown-item {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #333;
+    padding: 10px 20px;
+    border-radius: 6px;
+    transition: all 0.3s ease, background 0.4s;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-item .dropdown-item:hover {
+    background: linear-gradient(90deg, #ffbe00, #f8ebbf);
+    color: #e31d1a !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateX(5px);
+}
+
+.nav-item .dropdown-item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.6s ease-out;
+    z-index: 0;
+}
+
+.nav-item .dropdown-item:hover::before {
+    width: 200%;
+    height: 200%;
+    opacity: 0;
+}
+
+.nav-item .dropdown-item {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes dropdownFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
     }
 
-    .progress {
-        height: 4.5px;
-        width: 145.6px;
-        background: linear-gradient(#000000 0 0),
-            linear-gradient(#000000 0 0),
-            #dbdcef;
-        background-size: 60% 100%;
-        background-repeat: no-repeat;
-        animation: progress-7x9cg2 3s infinite;
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nav-item.dropdown .dropdown-menu {
+    animation: dropdownFade 0.4s ease;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    text-align: left;
+}
+
+.user-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #f8ebbf50;
+    object-fit: cover;
+}
+
+.user-info .details {
+    line-height: 1.2;
+}
+
+.btn-logout {
+    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+    color: #fff;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-logout:hover {
+    background: linear-gradient(45deg, #ff4b2b, #ff416c);
+}
+
+.progress {
+    height: 4.5px;
+    width: 145.6px;
+    background: linear-gradient(#000000 0 0),
+        linear-gradient(#000000 0 0),
+        #dbdcef;
+    background-size: 60% 100%;
+    background-repeat: no-repeat;
+    animation: progress-7x9cg2 3s infinite;
+}
+
+@keyframes progress-7x9cg2 {
+    0% {
+        background-position: -150% 0, -150% 0;
     }
 
-    @keyframes progress-7x9cg2 {
-        0% {
-            background-position: -150% 0, -150% 0;
-        }
-
-        66% {
-            background-position: 250% 0, -150% 0;
-        }
-
-        100% {
-            background-position: 250% 0, 250% 0;
-        }
+    66% {
+        background-position: 250% 0, -150% 0;
     }
 
-    #myBackgroundVideo {
-        position: fixed;
-        right: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 100vh;
-        object-fit: cover;
-        z-index: -1;
+    100% {
+        background-position: 250% 0, 250% 0;
     }
+}
+
+.modal-a4 {
+    max-width: 800px !important;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.modal-a4 .modal-content {
+    height: calc(100vh - 30px);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-a4 .modal-body {
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.modal-a4 iframe {
+    height: 100%;
+    width: 100%;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    display: none;
+}
+
+.canvas-container {
+    position: relative;
+    max-width: 100%;
+    margin: auto;
+}
+
+.capture-canvas {
+    border: 1px solid #ccc;
+    width: 100%;
+    height: auto;
+    cursor: crosshair;
+    display: none;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.selection-box {
+    position: absolute;
+    border: 2px dashed #ff0000;
+    pointer-events: none;
+    display: none;
+}
+
+.custom-swal-popup {
+    width: auto !important;
+    max-width: none !important;
+    display: inline-block;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.input-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.input-container .form-floating {
+    flex: 1;
+}
+
+.scroll-title {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+}
+
+.scroll-title span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 10s linear infinite;
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+
+#myBackgroundVideo {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: -1;
+}
