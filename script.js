@@ -306,189 +306,87 @@ $(document).ready(async function () {
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        let flex = {
-                            type: 'flex',
-                            altText: 'บันทึกเข้างานเรียบร้อย',
-                            contents: {
-                                "type": "bubble",
-                                "body": {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "type": "image",
-                                            "size": "full",
-                                            "aspectRatio": "2:1",
-                                            "flex": 1,
-                                            "animated": true,
-                                            "url": "https://community.akamai.steamstatic.com/economy/profilebackground/items/2861690/6afa7adf514fb727c292a18974fe215a0bb11be6.jpg",
-                                            "gravity": "center",
-                                            "aspectMode": "cover"
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                {
-                                                    "type": "box",
-                                                    "layout": "vertical",
-                                                    "contents": [
-                                                        {
-                                                            "type": "image",
-                                                            "url": localStorage.getItem('pictureUrl'),
-                                                            "aspectMode": "cover",
-                                                            "size": "full"
-                                                        },
-                                                        {
-                                                            "type": "image",
-                                                            "url": "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/2861690/396aa5ec2a44df7548ffa2bcc5383eef91095a4b.png",
-                                                            "aspectMode": "cover",
-                                                            "size": "full",
-                                                            "position": "absolute",
-                                                            "animated": true
-                                                        }
-                                                    ],
-                                                    "cornerRadius": "100px",
-                                                    "width": "100px",
-                                                    "height": "100px"
-                                                },
-                                                {
-                                                    "type": "box",
-                                                    "layout": "vertical",
-                                                    "contents": [
-                                                        {
-                                                            "type": "text",
-                                                            "text": "บันทึกเข้างานเสร็จสิ้น",
-                                                            "wrap": true,
-                                                            "weight": "bold",
-                                                            "size": "sm",
-                                                            "color": "#FFD027",
-                                                            "align": "center"
-                                                        },
-                                                        {
-                                                            "type": "text",
-                                                            "text": "Time : " + res.time,
-                                                            "wrap": true,
-                                                            "weight": "bold",
-                                                            "size": "sm",
-                                                            "color": "#FFD027"
-                                                        },
-                                                        {
-                                                            "type": "text",
-                                                            "text": "Web : " + res.web,
-                                                            "wrap": true,
-                                                            "weight": "bold",
-                                                            "size": "sm",
-                                                            "color": "#FFD027"
-                                                        }
-                                                    ],
-                                                    "backgroundColor": "#162C9acc",
-                                                    "cornerRadius": "10px",
-                                                    "margin": "10px",
-                                                    "paddingAll": "5px",
-                                                    "spacing": "xs"
-                                                }
-                                            ],
-                                            "spacing": "xl",
-                                            "position": "absolute",
-                                            "paddingAll": "20px"
-                                        }
-                                    ],
-                                    "paddingAll": "0px"
-                                }
-                            }
-                        };
-                        if (liff.isInClient()) {
-                            liff.sendMessages([flex])
-                                .then(() => liff.closeWindow())
-                                .catch(err => console.error('sendMessages failed:', err));
-                        } else {
-                            liff.shareTargetPicker([flex])
-                                .then(() => console.log('shared flex via picker'))
-                                .catch(err => console.error('shareTargetPicker failed:', err));
-                        }
 
+                        liff.closeWindow();
                     });
-                //     liff.closeWindow();
-                // });
-    }
+                }
                 else if (res.status === 'nocheckin') {
-        Swal.fire({
-            icon: 'error',
-            title: res.message,
-            text: res.text,
-            allowOutsideClick: false,
-            confirmButtonText: 'ตกลง',
-        }).then(() => {
-            liff.closeWindow();
-        });
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: res.message,
-            text: res.text,
-            allowOutsideClick: false,
-            confirmButtonText: 'ตกลง',
-        }).then(() => {
-            liff.closeWindow();
-            window.location.reload();
-        }).catch((error) => {
-            console.error('เกิดข้อผิดพลาดในการส่งข้อความ:', error);
-            liff.closeWindow();
-        });
-    }
-})
-    .catch(() => {
-        showhidepage('.home');
-        Swal.fire({
-            icon: 'error',
-            title: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
-            allowOutsideClick: false,
-            confirmButtonText: 'ตกลง',
-        });
-    });
-    }
-
-function checkuser(uuid) {
-    showhidepage('header')
-    callApi('checkuser', { "uuid": uuid })
-        .then(res => {
-            if (res.status === 'success') {
-                Swal.fire({
-                    title: res.message,
-                    text: res.text,
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    showhidepage('.home');
-                    window.loc = res.loc
-                    window.web = res.web
-                    window.name = res.name
-                    startLocationTracking();
-                    startFaceScannerWrapper();
-                });
-            } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: res.message,
+                        text: res.text,
+                        allowOutsideClick: false,
+                        confirmButtonText: 'ตกลง',
+                    }).then(() => {
+                        liff.closeWindow();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: res.message,
+                        text: res.text,
+                        allowOutsideClick: false,
+                        confirmButtonText: 'ตกลง',
+                    }).then(() => {
+                        liff.closeWindow();
+                        window.location.reload();
+                    }).catch((error) => {
+                        console.error('เกิดข้อผิดพลาดในการส่งข้อความ:', error);
+                        liff.closeWindow();
+                    });
+                }
+            })
+            .catch(() => {
+                showhidepage('.home');
                 Swal.fire({
                     icon: 'error',
-                    title: res.message,
-                    text: res.text,
+                    title: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
                     allowOutsideClick: false,
                     confirmButtonText: 'ตกลง',
-                }).then(() => {
-                    showhidepage('header');
                 });
-            }
-        })
-        .catch(() => {
-            showhidepage('header');
-            Swal.fire({
-                icon: 'error',
-                title: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
-                allowOutsideClick: false,
-                confirmButtonText: 'ตกลง',
             });
-        });
-}
+    }
+
+    function checkuser(uuid) {
+        showhidepage('header')
+        callApi('checkuser', { "uuid": uuid })
+            .then(res => {
+                if (res.status === 'success') {
+                    Swal.fire({
+                        title: res.message,
+                        text: res.text,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        showhidepage('.home');
+                        window.loc = res.loc
+                        window.web = res.web
+                        window.name = res.name
+                        startLocationTracking();
+                        startFaceScannerWrapper();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: res.message,
+                        text: res.text,
+                        allowOutsideClick: false,
+                        confirmButtonText: 'ตกลง',
+                    }).then(() => {
+                        showhidepage('header');
+                    });
+                }
+            })
+            .catch(() => {
+                showhidepage('header');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                    allowOutsideClick: false,
+                    confirmButtonText: 'ตกลง',
+                });
+            });
+    }
 });
 
