@@ -5,10 +5,67 @@ $(document).ready(async function () {
     let userProfile = null;
     let watchId = null;
     let locationHistory = [];
+    
+    // กำหนดจุดเช็คอินและระยะทางที่อนุญาต
+    const CHECK_IN_POINT = {
+        lat: 20.448375,
+        lng: 99.886826
+    };
+    const MAX_DISTANCE_METERS = 5;
     $('.btnGetLocation').hide();
     function logOut(obj) {
         const output = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
         console.log(output);
+    }
+
+    // ฟังก์ชันคำนวณระยะทางระหว่าง 2 จุด (Haversine formula)
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371e3; // รัศมีโลกเป็นเมตร
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // ระยะทางเป็นเมตร
+    }
+
+    // ฟังก์ชันตรวจสอบว่าผู้ใช้อยู่ในระยะที่อนุญาต
+    function checkLocationInRange() {
+        if (!window.lat || !window.lng) {
+            return {
+                valid: false,
+                message: 'ไม่พบข้อมูลตำแหน่ง',
+                text: 'กรุณารอสักครู่ให้ระบบตรวจจับตำแหน่งของคุณ หรือกดปุ่ม "รับตำแหน่ง" อีกครั้ง'
+            };
+        }
+
+        const distance = calculateDistance(
+            parseFloat(window.lat),
+            parseFloat(window.lng),
+            CHECK_IN_POINT.lat,
+            CHECK_IN_POINT.lng
+        );
+
+        logOut(`ระยะทางจากจุดเช็คอิน: ${distance.toFixed(2)} เมตร`);
+
+        if (distance > MAX_DISTANCE_METERS) {
+            return {
+                valid: false,
+                message: 'คุณอยู่ห่างจากจุดเช็คอิน',
+                text: `คุณอยู่ห่างจากจุดเช็คอินประมาณ ${distance.toFixed(2)} เมตร \nกรุณาเข้าใกล้จุดเช็คอินให้อยู่ในระยะ ${MAX_DISTANCE_METERS} เมตร`,
+                distance: distance
+            };
+        }
+
+        return {
+            valid: true,
+            distance: distance
+        };
     }
 
     function saveLocation(location) {
@@ -73,15 +130,53 @@ $(document).ready(async function () {
                 $('.btnGetLocation').show();
 
                 let errorMsg = '';
+                let errorTitle = '';
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
                         errorMsg = '❌ ผู้ใช้ปฏิเสธการเข้าถึงตำแหน่ง';
+                        errorTitle = 'ไม่ได้รับสิทธิ์การเข้าถึงตำแหน่ง';
+                        
+                        // แสดง alert เมื่อไม่ได้รับสิทธิ์
+                        Swal.fire({
+                            icon: 'error',
+                            title: errorTitle,
+                            html: 'กรุณาอนุญาตการเข้าถึงตำแหน่งในการตั้งค่าเบราว์เซอร์ของคุณ<br><br>'+
+                                  '<small>1. กดที่ไอคอนล็อค (🔒) ด้านซ้ายของ URL</small><br>'+
+                                  '<small>2. เลือก "อนุญาต" สำหรับตำแหน่ง (Location)</small><br>'+
+                                  '<small>3. รีเฟรชหน้าเว็บ</small>',
+                            allowOutsideClick: false,
+                            confirmButtonText: 'ลองอีกครั้ง',
+                            showCancelButton: true,
+                            cancelButtonText: 'ยกเลิก'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $('.btnGetLocation').trigger('click');
+                            }
+                        });
                         break;
                     case error.POSITION_UNAVAILABLE:
                         errorMsg = '❌ ไม่สามารถระบุตำแหน่งได้';
+                        errorTitle = 'ไม่สามารถระบุตำแหน่ง';
+                        Swal.fire({
+                            icon: 'warning',
+                            title: errorTitle,
+                            text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและ GPS',
+                            confirmButtonText: 'ลองอีกครั้ง'
+                        }).then(() => {
+                            $('.btnGetLocation').trigger('click');
+                        });
                         break;
                     case error.TIMEOUT:
                         errorMsg = '❌ หมดเวลาในการดึงตำแหน่ง';
+                        errorTitle = 'หมดเวลาในการดึงตำแหน่ง';
+                        Swal.fire({
+                            icon: 'warning',
+                            title: errorTitle,
+                            text: 'กรุณาลองใหม่อีกครั้ง',
+                            confirmButtonText: 'ลองอีกครั้ง'
+                        }).then(() => {
+                            $('.btnGetLocation').trigger('click');
+                        });
                         break;
                     default:
                         errorMsg = '❌ เกิดข้อผิดพลาด: ' + error.message;
@@ -281,6 +376,25 @@ $(document).ready(async function () {
                 icon: 'error',
                 title: 'บันทึกไม่สำเร็จ',
                 text: 'กรุณาถ่ายภาพเช็คอินก่อนบันทึก',
+            });
+        }
+
+        // ตรวจสอบระยะทางจากจุดเช็คอิน
+        const locationCheck = checkLocationInRange();
+        if (!locationCheck.valid) {
+            return Swal.fire({
+                icon: 'warning',
+                title: locationCheck.message,
+                text: locationCheck.text,
+                allowOutsideClick: false,
+                confirmButtonText: 'ตกลง',
+                showCancelButton: true,
+                cancelButtonText: 'รับตำแหน่งใหม่'
+            }).then((result) => {
+                if (result.isDismissed) {
+                    // ถ้ากดปุ่มรับตำแหน่งใหม่
+                    $('.btnGetLocation').trigger('click');
+                }
             });
         }
         itemData.img = window.img;
