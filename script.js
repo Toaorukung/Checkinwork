@@ -12,7 +12,54 @@ $(document).ready(async function () {
         lng: 99.886826
     };
     const MAX_DISTANCE_METERS = 5;
+    let locationPermissionDenied = false;
+    let isLocationReady = false;
+    let isFaceScannerReady = false;
     $('.btnGetLocation').hide();
+    $('.save').hide(); // ซ่อนปุ่มบันทึกจนกว่าจะพร้อม
+
+    // ฟังก์ชันตรวจสอบสถานะสิทธิ์ Location
+    async function checkLocationPermission() {
+        if (!navigator.permissions) {
+            return 'unsupported';
+        }
+        try {
+            const result = await navigator.permissions.query({ name: 'geolocation' });
+            return result.state; // 'granted', 'denied', 'prompt'
+        } catch (error) {
+            return 'unsupported';
+        }
+    }
+
+    // แสดงคำแนะนำการเปิดสิทธิ์
+    function showPermissionGuide() {
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ ต้องการสิทธิ์การเข้าถึงตำแหน่ง',
+            html: '<div style="text-align: left; padding: 10px;">' +
+                  '<p><strong>ระบบต้องการสิทธิ์การเข้าถึงตำแหน่งเพื่อเช็คอิน</strong></p>' +
+                  '<hr>' +
+                  '<p><strong>📱 วิธีเปิดสิทธิ์:</strong></p>' +
+                  '<ol style="padding-left: 20px;">' +
+                  '<li>กดที่ไอคอน <strong>🔒 (ล็อค)</strong> หรือ <strong>ⓘ</strong> ด้านซ้ายของ URL</li>' +
+                  '<li>เลือก <strong>"อนุญาต"</strong> สำหรับตำแหน่ง (Location)</li>' +
+                  '<li>รีเฟรชหน้าเว็บหรือกดปุ่ม "ลองอีกครั้ง"</li>' +
+                  '</ol>' +
+                  '<p style="color: #666; font-size: 12px; margin-top: 10px;">💡 หากไม่พบตัวเลือก ให้ลองปิดและเปิดหน้าเว็บใหม่</p>' +
+                  '</div>',
+            allowOutsideClick: false,
+            showCancelButton: true,
+            confirmButtonText: '🔄 ลองอีกครั้ง',
+            cancelButtonText: '❌ ยกเลิก',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                location.reload();
+            }
+        });
+    }
+
     function logOut(obj) {
         const output = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
         console.log(output);
@@ -75,6 +122,14 @@ $(document).ready(async function () {
         }
     }
 
+    // ฟังก์ชันตรวจสอบและแสดงปุ่มบันทึกเมื่อพร้อม
+    function checkAndEnableSaveButton() {
+        if (isLocationReady && isFaceScannerReady) {
+            $('.save').fadeIn();
+            logOut('✅ ระบบพร้อมใช้งาน - สามารถบันทึกข้อมูลได้');
+        }
+    }
+
     try {
         await liff.init({ liffId: LIFF_ID });
 
@@ -91,11 +146,25 @@ $(document).ready(async function () {
         logOut('Error: ' + e.message);
     }
 
-    function startLocationTracking() {
-
-
+    async function startLocationTracking() {
+        // ตรวจสอบว่า Browser รองรับ Geolocation หรือไม่
         if (!navigator.geolocation) {
             $('.btnGetLocation').show();
+            Swal.fire({
+                icon: 'error',
+                title: 'เบราว์เซอร์ไม่รองรับ',
+                text: 'เบราว์เซอร์ของคุณไม่รองรับการตรวจจับตำแหน่ง',
+                confirmButtonText: 'ตกลง'
+            });
+            return;
+        }
+
+        // ตรวจสอบสถานะสิทธิ์ก่อนเริ่มต้น
+        const permissionStatus = await checkLocationPermission();
+        if (permissionStatus === 'denied') {
+            $('.btnGetLocation').show();
+            locationPermissionDenied = true;
+            showPermissionGuide();
             return;
         }
 
@@ -119,12 +188,39 @@ $(document).ready(async function () {
 
                 $('.lat').text(location.lat.toFixed(6));
                 $('.lng').text(location.lng.toFixed(6));
-                window.lat = location.lat.toFixed(6)
-                window.lng = location.lng.toFixed(6)
+                window.lat = location.lat.toFixed(6);
+                window.lng = location.lng.toFixed(6);
+                
                 logOut({
                     current: location,
                     history: locationHistory
                 });
+
+                // ตรวจสอบระยะทางจากจุดเช็คอิน
+                const distance = calculateDistance(
+                    location.lat,
+                    location.lng,
+                    CHECK_IN_POINT.lat,
+                    CHECK_IN_POINT.lng
+                );
+
+                if (distance <= MAX_DISTANCE_METERS) {
+                    // ตำแหน่งอยู่ในระยะที่กำหนด
+                    if (!isLocationReady) {
+                        isLocationReady = true;
+                        logOut(`✅ ตำแหน่งถูกต้อง! ระยะทาง: ${distance.toFixed(2)} เมตร`);
+                        
+                        // เริ่มโหลดโมเดลสแกนหน้าเมื่อได้ตำแหน่งที่ถูกต้องแล้ว
+                        startFaceScannerWrapper();
+                    }
+                } else {
+                    // ตำแหน่งอยู่นอกระยะ
+                    if (isLocationReady) {
+                        isLocationReady = false;
+                        $('.save').hide();
+                        logOut(`⚠️ ออกนอกระยะเช็คอิน! ระยะทาง: ${distance.toFixed(2)} เมตร`);
+                    }
+                }
             },
             function (error) {
                 $('.btnGetLocation').show();
@@ -135,24 +231,10 @@ $(document).ready(async function () {
                     case error.PERMISSION_DENIED:
                         errorMsg = '❌ ผู้ใช้ปฏิเสธการเข้าถึงตำแหน่ง';
                         errorTitle = 'ไม่ได้รับสิทธิ์การเข้าถึงตำแหน่ง';
+                        locationPermissionDenied = true;
                         
-                        // แสดง alert เมื่อไม่ได้รับสิทธิ์
-                        Swal.fire({
-                            icon: 'error',
-                            title: errorTitle,
-                            html: 'กรุณาอนุญาตการเข้าถึงตำแหน่งในการตั้งค่าเบราว์เซอร์ของคุณ<br><br>'+
-                                  '<small>1. กดที่ไอคอนล็อค (🔒) ด้านซ้ายของ URL</small><br>'+
-                                  '<small>2. เลือก "อนุญาต" สำหรับตำแหน่ง (Location)</small><br>'+
-                                  '<small>3. รีเฟรชหน้าเว็บ</small>',
-                            allowOutsideClick: false,
-                            confirmButtonText: 'ลองอีกครั้ง',
-                            showCancelButton: true,
-                            cancelButtonText: 'ยกเลิก'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                $('.btnGetLocation').trigger('click');
-                            }
-                        });
+                        // แสดงคำแนะนำแบบละเอียด
+                        showPermissionGuide();
                         break;
                     case error.POSITION_UNAVAILABLE:
                         errorMsg = '❌ ไม่สามารถระบุตำแหน่งได้';
@@ -249,6 +331,8 @@ $(document).ready(async function () {
 
         isCaptured = false;
         isBlinked = false;
+        isFaceScannerReady = false;
+        $('.save').hide();
 
         $refreshButton.hide();
         $canvas.hide()
@@ -308,6 +392,10 @@ $(document).ready(async function () {
                         $canvas.show()
                         $statusEl.text("✅ บันทึกภาพเสร็จสมบูรณ์! แสดงผลภาพที่จับได้แล้ว");
                         $refreshButton.show();
+                        
+                        // แสดงปุ่มบันทึกเมื่อพร้อม
+                        isFaceScannerReady = true;
+                        checkAndEnableSaveButton();
 
                         resetState("แคปภาพเสร็จสิ้น", '#5cff64ff');
 
@@ -347,6 +435,8 @@ $(document).ready(async function () {
                     numFaces: 1
                 });
                 $statusEl.text("✅ โหลดโมเดลเสร็จสมบูรณ์");
+                isFaceScannerReady = true;
+                checkAndEnableSaveButton();
             }
 
             camera = new Camera(videoEl, {
@@ -382,17 +472,24 @@ $(document).ready(async function () {
         // ตรวจสอบระยะทางจากจุดเช็คอิน
         const locationCheck = checkLocationInRange();
         if (!locationCheck.valid) {
+            const buttons = {
+                confirmButtonText: 'ตกลง',
+                showCancelButton: true,
+                cancelButtonText: '📍 รับตำแหน่งใหม่',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#28a745'
+            };
+
             return Swal.fire({
-                icon: 'warning',
+                icon: locationCheck.distance ? 'warning' : 'info',
                 title: locationCheck.message,
                 text: locationCheck.text,
                 allowOutsideClick: false,
-                confirmButtonText: 'ตกลง',
-                showCancelButton: true,
-                cancelButtonText: 'รับตำแหน่งใหม่'
+                ...buttons
             }).then((result) => {
-                if (result.isDismissed) {
+                if (result.dismiss === Swal.DismissReason.cancel) {
                     // ถ้ากดปุ่มรับตำแหน่งใหม่
+                    $('.btnGetLocation').show();
                     $('.btnGetLocation').trigger('click');
                 }
             });
@@ -580,8 +677,9 @@ $(document).ready(async function () {
                         window.loc = res.loc
                         window.web = res.web
                         window.name = res.name
+                        // เริ่มเฉพาะ location tracking ก่อน
+                        // โมเดลสแกนหน้าจะโหลดอัตโนมัติเมื่อได้ตำแหน่งที่ถูกต้อง
                         startLocationTracking();
-                        startFaceScannerWrapper();
                     });
                 } else {
                     Swal.fire({
