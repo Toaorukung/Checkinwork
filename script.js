@@ -7,10 +7,18 @@ $(document).ready(async function () {
     let locationHistory = [];
     
     // กำหนดจุดเช็คอินและระยะทางที่อนุญาต
-    const CHECK_IN_POINT = {
-        lat: 20.448375,
-        lng: 99.886826
-    };
+    const CHECK_IN_POINTS = [
+        {
+            lat: 20.448375,
+            lng: 99.886826,
+            name: 'จุดเช็คอิน 1'
+        },
+        {
+            lat: 20.448420,
+            lng: 99.886871,
+            name: 'จุดเช็คอิน 2'
+        }
+    ];
     const MAX_DISTANCE_METERS = 5;
     let locationPermissionDenied = false;
     $('.btnGetLocation').hide();
@@ -88,27 +96,43 @@ $(document).ready(async function () {
             };
         }
 
-        const distance = calculateDistance(
-            parseFloat(window.lat),
-            parseFloat(window.lng),
-            CHECK_IN_POINT.lat,
-            CHECK_IN_POINT.lng
-        );
+        // ตรวจสอบระยะทางจากทุกจุดเช็คอิน
+        let closestPoint = null;
+        let minDistance = Infinity;
 
-        logOut(`ระยะทางจากจุดเช็คอิน: ${distance.toFixed(2)} เมตร`);
+        CHECK_IN_POINTS.forEach(point => {
+            const distance = calculateDistance(
+                parseFloat(window.lat),
+                parseFloat(window.lng),
+                point.lat,
+                point.lng
+            );
 
-        if (distance > MAX_DISTANCE_METERS) {
+            logOut(`ระยะทางจาก${point.name}: ${distance.toFixed(2)} เมตร`);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = point;
+            }
+        });
+
+        // ถ้าอยู่ในระยะที่กำหนดของจุดใดจุดหนึ่ง ถือว่าผ่าน
+        if (minDistance <= MAX_DISTANCE_METERS) {
+            logOut(`✅ อยู่ในระยะที่อนุญาต (${closestPoint.name}: ${minDistance.toFixed(2)} เมตร)`);
             return {
-                valid: false,
-                message: 'คุณอยู่ห่างจากจุดเช็คอิน',
-                text: `คุณอยู่ห่างจากจุดเช็คอินประมาณ ${distance.toFixed(2)} เมตร \nกรุณาเข้าใกล้จุดเช็คอินให้อยู่ในระยะ ${MAX_DISTANCE_METERS} เมตร`,
-                distance: distance
+                valid: true,
+                distance: minDistance,
+                pointName: closestPoint.name
             };
         }
 
+        // ถ้าอยู่นอกระยะจากทุกจุด
         return {
-            valid: true,
-            distance: distance
+            valid: false,
+            message: 'คุณอยู่ห่างจากจุดเช็คอิน',
+            text: `คุณอยู่ห่างจาก${closestPoint.name}ประมาณ ${minDistance.toFixed(2)} เมตร\nกรุณาเข้าใกล้จุดเช็คอินให้อยู่ในระยะ ${MAX_DISTANCE_METERS} เมตร`,
+            distance: minDistance,
+            pointName: closestPoint.name
         };
     }
 
