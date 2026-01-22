@@ -13,10 +13,7 @@ $(document).ready(async function () {
     };
     const MAX_DISTANCE_METERS = 5;
     let locationPermissionDenied = false;
-    let isLocationReady = false;
-    let isFaceScannerReady = false;
     $('.btnGetLocation').hide();
-    $('.save').hide(); // ซ่อนปุ่มบันทึกจนกว่าจะพร้อม
 
     // ฟังก์ชันตรวจสอบสถานะสิทธิ์ Location
     async function checkLocationPermission() {
@@ -122,14 +119,6 @@ $(document).ready(async function () {
         }
     }
 
-    // ฟังก์ชันตรวจสอบและแสดงปุ่มบันทึกเมื่อพร้อม
-    function checkAndEnableSaveButton() {
-        if (isLocationReady && isFaceScannerReady) {
-            $('.save').fadeIn();
-            logOut('✅ ระบบพร้อมใช้งาน - สามารถบันทึกข้อมูลได้');
-        }
-    }
-
     try {
         await liff.init({ liffId: LIFF_ID });
 
@@ -188,39 +177,12 @@ $(document).ready(async function () {
 
                 $('.lat').text(location.lat.toFixed(6));
                 $('.lng').text(location.lng.toFixed(6));
-                window.lat = location.lat.toFixed(6);
-                window.lng = location.lng.toFixed(6);
-                
+                window.lat = location.lat.toFixed(6)
+                window.lng = location.lng.toFixed(6)
                 logOut({
                     current: location,
                     history: locationHistory
                 });
-
-                // ตรวจสอบระยะทางจากจุดเช็คอิน
-                const distance = calculateDistance(
-                    location.lat,
-                    location.lng,
-                    CHECK_IN_POINT.lat,
-                    CHECK_IN_POINT.lng
-                );
-
-                if (distance <= MAX_DISTANCE_METERS) {
-                    // ตำแหน่งอยู่ในระยะที่กำหนด
-                    if (!isLocationReady) {
-                        isLocationReady = true;
-                        logOut(`✅ ตำแหน่งถูกต้อง! ระยะทาง: ${distance.toFixed(2)} เมตร`);
-                        
-                        // เริ่มโหลดโมเดลสแกนหน้าเมื่อได้ตำแหน่งที่ถูกต้องแล้ว
-                        startFaceScannerWrapper();
-                    }
-                } else {
-                    // ตำแหน่งอยู่นอกระยะ
-                    if (isLocationReady) {
-                        isLocationReady = false;
-                        $('.save').hide();
-                        logOut(`⚠️ ออกนอกระยะเช็คอิน! ระยะทาง: ${distance.toFixed(2)} เมตร`);
-                    }
-                }
             },
             function (error) {
                 $('.btnGetLocation').show();
@@ -331,8 +293,6 @@ $(document).ready(async function () {
 
         isCaptured = false;
         isBlinked = false;
-        isFaceScannerReady = false;
-        $('.save').hide();
 
         $refreshButton.hide();
         $canvas.hide()
@@ -392,10 +352,6 @@ $(document).ready(async function () {
                         $canvas.show()
                         $statusEl.text("✅ บันทึกภาพเสร็จสมบูรณ์! แสดงผลภาพที่จับได้แล้ว");
                         $refreshButton.show();
-                        
-                        // แสดงปุ่มบันทึกเมื่อพร้อม
-                        isFaceScannerReady = true;
-                        checkAndEnableSaveButton();
 
                         resetState("แคปภาพเสร็จสิ้น", '#5cff64ff');
 
@@ -435,8 +391,6 @@ $(document).ready(async function () {
                     numFaces: 1
                 });
                 $statusEl.text("✅ โหลดโมเดลเสร็จสมบูรณ์");
-                isFaceScannerReady = true;
-                checkAndEnableSaveButton();
             }
 
             camera = new Camera(videoEl, {
@@ -677,9 +631,8 @@ $(document).ready(async function () {
                         window.loc = res.loc
                         window.web = res.web
                         window.name = res.name
-                        // เริ่มเฉพาะ location tracking ก่อน
-                        // โมเดลสแกนหน้าจะโหลดอัตโนมัติเมื่อได้ตำแหน่งที่ถูกต้อง
                         startLocationTracking();
+                        startFaceScannerWrapper();
                     });
                 } else {
                     Swal.fire({
