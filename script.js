@@ -5,8 +5,7 @@ $(document).ready(async function () {
     let userProfile = null;
     let watchId = null;
     let locationHistory = [];
-    
-    // กำหนดจุดเช็คอินและระยะทางที่อนุญาต
+
     const CHECK_IN_POINTS = [
         {
             lat: 20.448375,
@@ -23,35 +22,33 @@ $(document).ready(async function () {
     let locationPermissionDenied = false;
     $('.btnGetLocation').hide();
 
-    // ฟังก์ชันตรวจสอบสถานะสิทธิ์ Location
     async function checkLocationPermission() {
         if (!navigator.permissions) {
             return 'unsupported';
         }
         try {
             const result = await navigator.permissions.query({ name: 'geolocation' });
-            return result.state; // 'granted', 'denied', 'prompt'
+            return result.state;
         } catch (error) {
             return 'unsupported';
         }
     }
 
-    // แสดงคำแนะนำการเปิดสิทธิ์
     function showPermissionGuide() {
         Swal.fire({
             icon: 'warning',
             title: '⚠️ ต้องการสิทธิ์การเข้าถึงตำแหน่ง',
             html: '<div style="text-align: left; padding: 10px;">' +
-                  '<p><strong>ระบบต้องการสิทธิ์การเข้าถึงตำแหน่งเพื่อเช็คอิน</strong></p>' +
-                  '<hr>' +
-                  '<p><strong>📱 วิธีเปิดสิทธิ์:</strong></p>' +
-                  '<ol style="padding-left: 20px;">' +
-                  '<li>กดที่ไอคอน <strong>🔒 (ล็อค)</strong> หรือ <strong>ⓘ</strong> ด้านซ้ายของ URL</li>' +
-                  '<li>เลือก <strong>"อนุญาต"</strong> สำหรับตำแหน่ง (Location)</li>' +
-                  '<li>รีเฟรชหน้าเว็บหรือกดปุ่ม "ลองอีกครั้ง"</li>' +
-                  '</ol>' +
-                  '<p style="color: #666; font-size: 12px; margin-top: 10px;">💡 หากไม่พบตัวเลือก ให้ลองปิดและเปิดหน้าเว็บใหม่</p>' +
-                  '</div>',
+                '<p><strong>ระบบต้องการสิทธิ์การเข้าถึงตำแหน่งเพื่อเช็คอิน</strong></p>' +
+                '<hr>' +
+                '<p><strong>📱 วิธีเปิดสิทธิ์:</strong></p>' +
+                '<ol style="padding-left: 20px;">' +
+                '<li>กดที่ไอคอน <strong>🔒 (ล็อค)</strong> หรือ <strong>ⓘ</strong> ด้านซ้ายของ URL</li>' +
+                '<li>เลือก <strong>"อนุญาต"</strong> สำหรับตำแหน่ง (Location)</li>' +
+                '<li>รีเฟรชหน้าเว็บหรือกดปุ่ม "ลองอีกครั้ง"</li>' +
+                '</ol>' +
+                '<p style="color: #666; font-size: 12px; margin-top: 10px;">💡 หากไม่พบตัวเลือก ให้ลองปิดและเปิดหน้าเว็บใหม่</p>' +
+                '</div>',
             allowOutsideClick: false,
             showCancelButton: true,
             confirmButtonText: '🔄 ลองอีกครั้ง',
@@ -70,25 +67,31 @@ $(document).ready(async function () {
         console.log(output);
     }
 
-    // ฟังก์ชันคำนวณระยะทางระหว่าง 2 จุด (Haversine formula)
     function calculateDistance(lat1, lng1, lat2, lng2) {
-        const R = 6371e3; // รัศมีโลกเป็นเมตร
+        const R = 6371e3;
         const φ1 = lat1 * Math.PI / 180;
         const φ2 = lat2 * Math.PI / 180;
         const Δφ = (lat2 - lat1) * Math.PI / 180;
         const Δλ = (lng2 - lng1) * Math.PI / 180;
 
         const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return R * c; // ระยะทางเป็นเมตร
+        return R * c;
     }
 
-    // ฟังก์ชันตรวจสอบว่าผู้ใช้อยู่ในระยะที่อนุญาต
     function checkLocationInRange() {
-        if (!window.lat || !window.lng) {
+        // ตรวจสอบว่ามีค่า lat/lng จาก span หรือ window หรือไม่
+        let currentLat = window.lat || $('.lat').text().trim();
+        let currentLng = window.lng || $('.lng').text().trim();
+        
+        // แปลงเป็นตัวเลขและตรวจสอบความถูกต้อง
+        currentLat = currentLat ? parseFloat(currentLat) : null;
+        currentLng = currentLng ? parseFloat(currentLng) : null;
+        
+        if (!currentLat || !currentLng || isNaN(currentLat) || isNaN(currentLng)) {
             return {
                 valid: false,
                 message: 'ไม่พบข้อมูลตำแหน่ง',
@@ -96,14 +99,17 @@ $(document).ready(async function () {
             };
         }
 
-        // ตรวจสอบระยะทางจากทุกจุดเช็คอิน
+        // บันทึกค่าล่าสุดลง window เพื่อใช้งานในส่วนอื่น
+        window.lat = currentLat.toFixed(6);
+        window.lng = currentLng.toFixed(6);
+
         let closestPoint = null;
         let minDistance = Infinity;
 
         CHECK_IN_POINTS.forEach(point => {
             const distance = calculateDistance(
-                parseFloat(window.lat),
-                parseFloat(window.lng),
+                currentLat,
+                currentLng,
                 point.lat,
                 point.lng
             );
@@ -116,7 +122,6 @@ $(document).ready(async function () {
             }
         });
 
-        // ถ้าอยู่ในระยะที่กำหนดของจุดใดจุดหนึ่ง ถือว่าผ่าน
         if (minDistance <= MAX_DISTANCE_METERS) {
             logOut(`✅ อยู่ในระยะที่อนุญาต (${closestPoint.name}: ${minDistance.toFixed(2)} เมตร)`);
             return {
@@ -126,7 +131,6 @@ $(document).ready(async function () {
             };
         }
 
-        // ถ้าอยู่นอกระยะจากทุกจุด
         return {
             valid: false,
             message: 'คุณอยู่ห่างจากจุดเช็คอิน',
@@ -160,7 +164,6 @@ $(document).ready(async function () {
     }
 
     async function startLocationTracking() {
-        // ตรวจสอบว่า Browser รองรับ Geolocation หรือไม่
         if (!navigator.geolocation) {
             $('.btnGetLocation').show();
             Swal.fire({
@@ -172,7 +175,6 @@ $(document).ready(async function () {
             return;
         }
 
-        // ตรวจสอบสถานะสิทธิ์ก่อนเริ่มต้น
         const permissionStatus = await checkLocationPermission();
         if (permissionStatus === 'denied') {
             $('.btnGetLocation').show();
@@ -218,8 +220,7 @@ $(document).ready(async function () {
                         errorMsg = '❌ ผู้ใช้ปฏิเสธการเข้าถึงตำแหน่ง';
                         errorTitle = 'ไม่ได้รับสิทธิ์การเข้าถึงตำแหน่ง';
                         locationPermissionDenied = true;
-                        
-                        // แสดงคำแนะนำแบบละเอียด
+
                         showPermissionGuide();
                         break;
                     case error.POSITION_UNAVAILABLE:
@@ -447,7 +448,6 @@ $(document).ready(async function () {
             });
         }
 
-        // ตรวจสอบระยะทางจากจุดเช็คอิน
         const locationCheck = checkLocationInRange();
         if (!locationCheck.valid) {
             const buttons = {
@@ -466,7 +466,6 @@ $(document).ready(async function () {
                 ...buttons
             }).then((result) => {
                 if (result.dismiss === Swal.DismissReason.cancel) {
-                    // ถ้ากดปุ่มรับตำแหน่งใหม่
                     $('.btnGetLocation').show();
                     $('.btnGetLocation').trigger('click');
                 }
