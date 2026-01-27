@@ -5,6 +5,46 @@ $(document).ready(async function () {
     let userProfile = null;
     let watchId = null;
     let locationHistory = [];
+    let userIP = null;
+    let ipInfo = null;
+
+    // ฟังก์ชันดึง IP Address และข้อมูลที่เกี่ยวข้อง
+    async function getUserIP() {
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            const data = await response.json();
+            userIP = data.ip;
+            ipInfo = {
+                ip: data.ip,
+                city: data.city,
+                region: data.region,
+                country: data.country_name,
+                isp: data.org,
+                timezone: data.timezone,
+                latitude: data.latitude,
+                longitude: data.longitude
+            };
+            console.log('IP Information:', ipInfo);
+            return ipInfo;
+        } catch (error) {
+            console.error('ไม่สามารถดึง IP address:', error);
+            // ถ้า API แรกไม่สำเร็จ ลองใช้ API สำรอง
+            try {
+                const fallbackResponse = await fetch('https://api.ipify.org?format=json');
+                const fallbackData = await fallbackResponse.json();
+                userIP = fallbackData.ip;
+                ipInfo = { ip: fallbackData.ip };
+                console.log('IP (fallback):', userIP);
+                return ipInfo;
+            } catch (fallbackError) {
+                console.error('ไม่สามารถดึง IP จาก API สำรอง:', fallbackError);
+                return null;
+            }
+        }
+    }
+
+    // เรียกใช้ฟังก์ชันดึง IP ทันทีที่โหลดหน้า
+    getUserIP();
 
     const CHECK_IN_POINTS = [
         {
@@ -18,8 +58,14 @@ $(document).ready(async function () {
             name: 'จุดเช็คอิน 2'
         }
     ];
-    const MAX_DISTANCE_METERS = 5;
+    const MAX_DISTANCE_METERS = 10;
+
+    const WHITELIST_IPS = [
+        '110.77.193.112',
+    ];
+
     let locationPermissionDenied = false;
+
     $('.btnGetLocation').hide();
 
     async function checkLocationPermission() {
@@ -86,11 +132,29 @@ $(document).ready(async function () {
         // ตรวจสอบว่ามีค่า lat/lng จาก span หรือ window หรือไม่
         let currentLat = window.lat || $('.lat').text().trim();
         let currentLng = window.lng || $('.lng').text().trim();
-        
+
         // แปลงเป็นตัวเลขและตรวจสอบความถูกต้อง
         currentLat = currentLat ? parseFloat(currentLat) : null;
         currentLng = currentLng ? parseFloat(currentLng) : null;
-        
+
+        // ถ้ามีค่าโลเคชั่น ให้บันทึกค่าลง window
+        if (currentLat && currentLng && !isNaN(currentLat) && !isNaN(currentLng)) {
+            window.lat = currentLat.toFixed(6);
+            window.lng = currentLng.toFixed(6);
+        }
+
+        // เช็คว่า IP อยู่ใน whitelist หรือไม่ - ถ้าใช่ ไม่ต้องเช็คระยะทาง
+        if (userIP && WHITELIST_IPS.includes(userIP)) {
+            console.log(`✅ IP ${userIP} อยู่ใน Whitelist - ข้ามการตรวจสอบระยะทาง`);
+            return {
+                valid: true,
+                bypass: true,
+                message: 'ยกเว้นการตรวจสอบระยะทาง',
+                text: `IP ${userIP} ได้รับการยกเว้นการตรวจสอบระยะทาง`
+            };
+        }
+
+        // ตรวจสอบว่ามีค่าโลเคชั่นหรือไม่ (สำหรับ IP ที่ไม่อยู่ใน whitelist)
         if (!currentLat || !currentLng || isNaN(currentLat) || isNaN(currentLng)) {
             return {
                 valid: false,
@@ -98,10 +162,6 @@ $(document).ready(async function () {
                 text: 'กรุณารอสักครู่ให้ระบบตรวจจับตำแหน่งของคุณ หรือกดปุ่ม "รับตำแหน่ง" อีกครั้ง'
             };
         }
-
-        // บันทึกค่าล่าสุดลง window เพื่อใช้งานในส่วนอื่น
-        window.lat = currentLat.toFixed(6);
-        window.lng = currentLng.toFixed(6);
 
         let closestPoint = null;
         let minDistance = Infinity;
@@ -196,7 +256,9 @@ $(document).ready(async function () {
                     altitude: pos.coords.altitude,
                     heading: pos.coords.heading,
                     speed: pos.coords.speed,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    ip: userIP,
+                    ipInfo: ipInfo
                 };
 
                 saveLocation(location);
@@ -471,6 +533,12 @@ $(document).ready(async function () {
                 }
             });
         }
+
+        // แสดงข้อความถ้า IP ได้รับการยกเว้น
+        if (locationCheck.bypass) {
+            console.log('✅ ข้ามการตรวจสอบตำแหน่งเนื่องจาก IP อยู่ใน Whitelist');
+        }
+
         itemData.img = window.img;
         itemData.loc = window.loc
         itemData.web = window.web
