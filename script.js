@@ -58,7 +58,7 @@ $(document).ready(async function () {
             name: 'จุดเช็คอิน 2'
         }
     ];
-    const MAX_DISTANCE_METERS = 10000;
+    const MAX_DISTANCE_METERS = 100000;
 
     const WHITELIST_IPS = [
         '110.77.193.112',
